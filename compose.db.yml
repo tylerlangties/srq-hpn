@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: srq-hpn-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-srq_hpn}
+      POSTGRES_USER: ${POSTGRES_USER:-srq_hpn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-srq_hpn_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-srq_hpn} -d ${POSTGRES_DB:-srq_hpn}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres_data:

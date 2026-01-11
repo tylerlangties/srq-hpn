@@ -1,0 +1,20 @@
+{
+  "name": "srq-hpn",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "lint:web": "pnpm --filter web lint",
+    "dev:api": "bash -lc 'cd apps/api && source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000'",
+    "db:up": "docker compose -f compose.db.yml --env-file .env.local up -d",
+    "db:down": "docker compose -f compose.db.yml --env-file .env.local down",
+    "db:logs": "docker logs -f srq-hpn-db",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.27.0"
+}
