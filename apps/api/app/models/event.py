@@ -1,7 +1,14 @@
 from datetime import datetime
-from sqlalchemy import String, Text, ForeignKey, DateTime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.event_occurrence import EventOccurrence
+    from app.models.venue import Venue  # only for type hints
 
 
 class Event(Base):

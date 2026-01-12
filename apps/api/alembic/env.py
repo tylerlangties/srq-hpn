@@ -1,19 +1,16 @@
 import os
+from logging.config import fileConfig
 from pathlib import Path
+
 from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
+from alembic import context
+from app.db import Base
 
 # Always load apps/api/.env regardless of where alembic is run from
 ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(dotenv_path=ENV_PATH, override=True)
-
-
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
-
-from app.db import Base
-import app.models  # ensure models are imported
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -28,7 +25,6 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from pathlib import Path
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env", override=True)
 

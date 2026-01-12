@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from app.db import db_smoke_test
 
 app = FastAPI(title="SRQ Happenings API")
