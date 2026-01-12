@@ -1,0 +1,36 @@
+from datetime import datetime
+from sqlalchemy import String, Text, ForeignKey, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.db import Base
+
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id"), index=True)
+    source_id: Mapped[int] = mapped_column(ForeignKey("sources.id"), index=True)
+
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+
+    is_free: Mapped[bool] = mapped_column(default=False)
+    price_text: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    status: Mapped[str] = mapped_column(
+        String(20), default="scheduled"
+    )  # scheduled|canceled
+    external_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )
+    external_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # 🔹 ORM relationships
+    venue: Mapped["Venue"] = relationship(back_populates="events")
+    occurrences: Mapped[list["EventOccurrence"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
