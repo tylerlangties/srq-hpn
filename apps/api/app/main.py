@@ -1,6 +1,14 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from app.db import db_smoke_test
+# Always load apps/api/.env
+ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(dotenv_path=ENV_PATH, override=True)
+
+# LOAD ENV BEFORE THIS LINE
+from app.db import db_smoke_test  # noqa: E402
 
 app = FastAPI(title="SRQ Happenings API")
 

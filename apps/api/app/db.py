@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 
@@ -13,6 +13,12 @@ def get_database_url() -> str:
     if not url:
         raise RuntimeError("DATABASE_URL is not set")
     return url
+
+
+def db_smoke_test() -> dict:
+    with engine.connect() as conn:
+        now = conn.execute(text("SELECT now()")).scalar_one()
+    return {"db_ok": True, "now": str(now)}
 
 
 def get_engine():
