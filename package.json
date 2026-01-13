@@ -8,8 +8,8 @@
     "dev:web": "pnpm --filter web dev",
     "lint:web": "pnpm --filter web lint",
     "dev:api": "bash -lc 'cd apps/api && source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000'",
-    "lint:api": "cd apps/api && ruff check .",
-    "format:api": "cd apps/api && ruff format .",
+    "lint:api": "cd apps/api && .venv/bin/python -m ruff check .",
+    "format:api": "cd apps/api && .venv/bin/python -m ruff format .",
     "db:up": "docker compose -f compose.db.yml --env-file .env.local up -d",
     "db:down": "docker compose -f compose.db.yml --env-file .env.local down",
     "db:logs": "docker logs -f srq-hpn-db"
