@@ -1,16 +1,21 @@
-from pathlib import Path
-
-from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# Always load apps/api/.env
-ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
-load_dotenv(dotenv_path=ENV_PATH, override=True)
-
-# LOAD ENV BEFORE THIS LINE
+import app.core.env  # noqa: F401
 from app.db import db_smoke_test  # noqa: E402
+from app.routers.events import router as events_router
 
 app = FastAPI(title="SRQ Happenings API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(events_router)
 
 
 @app.get("/api/health")
