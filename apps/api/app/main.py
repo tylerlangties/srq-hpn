@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import app.core.env  # noqa: F401
 from app.db import db_smoke_test  # noqa: E402
+from app.routers.admin import router as admin_router
 from app.routers.events import router as events_router
 
 app = FastAPI(title="SRQ Happenings API")
@@ -16,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(events_router)
+app.include_router(admin_router)
 
 
 @app.get("/api/health")
