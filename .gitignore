@@ -1,12 +1,15 @@
+#General
 node_modules
 .env
 .env.local
-.ruff_cache
+
 
 # Python
 __pycache__/
+.ruff_cache
 *.py[cod]
 *.pyo
 
 #MISC
 event_sources.txt
+notes.txt
