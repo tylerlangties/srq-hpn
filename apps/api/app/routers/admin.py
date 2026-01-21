@@ -2,19 +2,21 @@ from __future__ import annotations
 
 import traceback
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_db
 from app.db import SessionLocal
 from app.ingestion.ical import fetch_ics, parse_ics
 from app.models.source import Source
+from app.services.ingest_source_items import ingest_source_items
 from app.services.ingest_upsert import upsert_event_and_occurrence
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(prefix="/api/admin/ingest", tags=["admin"])
 
 
-@router.post("/ingest/source/{source_id}")
+@router.post("/source/{source_id}")
 def ingest_source(source_id: int) -> dict:
     db: Session = SessionLocal()
     try:
@@ -62,3 +64,16 @@ def ingest_source(source_id: int) -> dict:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}") from e
     finally:
         db.close()
+
+
+@router.post("/source/{source_id}/items")
+def ingest_items_for_source(
+    source_id: int, db: Session = Depends(get_db)
+) -> dict[str, int]:
+    source = db.get(Source, source_id)
+    if source is None:
+        return {"items_seen": 0, "events_ingested": 0, "errors": 1}
+
+    result = ingest_source_items(db, source=source, limit=50)
+    db.commit()
+    return {"source_id": source_id, **result}

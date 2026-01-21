@@ -1,0 +1,43 @@
+{
+    "window.commandCenter": true,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact"
+    ],
+    "prettier.requireConfig": true,
+    "prettier.useEditorConfig": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "python.defaultInterpreterPath": "python",
+    "python.terminal.activateEnvironment": true,
+    // Enable Ruff diagnostics
+    "ruff.enable": true,
+    // Auto-fix what Ruff can fix
+    "ruff.fixAll": true,
+    // Use Ruff as formatter
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true
+    },
+    "editor.fontFamily": "JetBrains Mono, Fira Code, monospace",
+    "editor.fontSize": 14,
+    "editor.lineHeight": 28,
+    "editor.fontLigatures": true,
+    "terminal.integrated.fontFamily": "JetBrains Mono, monospace",
+    "terminal.integrated.fontSize": 13,
+    "workbench.activityBar.location": "top",
+    "workbench.statusBar.visible": true,
+    "editor.minimap.enabled": false,
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "cursor.composer.usageSummaryDisplay": "always",
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
+}
