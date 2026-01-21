@@ -8,7 +8,6 @@ from app.db import Base
 
 if TYPE_CHECKING:
     from app.models.event_occurrence import EventOccurrence
-    from app.models.venue import Venue  # only for type hints
 
 
 class Event(Base):
@@ -16,7 +15,10 @@ class Event(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id"), index=True)
+    venue_id: Mapped[int | None] = mapped_column(
+        ForeignKey("venues.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     source_id: Mapped[int] = mapped_column(ForeignKey("sources.id"), index=True)
 
     title: Mapped[str] = mapped_column(String(255))
@@ -37,7 +39,8 @@ class Event(Base):
         DateTime(timezone=True), nullable=True
     )
     # 🔹 ORM relationships
-    venue: Mapped["Venue"] = relationship(back_populates="events")
+    # Venue relationship removed, venue is now on EventOccurrence
+    # venue: Mapped["Venue"] = relationship(back_populates="events")
     occurrences: Mapped[list["EventOccurrence"]] = relationship(
         back_populates="event", cascade="all, delete-orphan"
     )

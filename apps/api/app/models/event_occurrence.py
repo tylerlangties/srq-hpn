@@ -1,13 +1,14 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy import DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
 if TYPE_CHECKING:
-    from app.models.event import Event  # only for type hints
+    from app.models.event import Event
+    from app.models.venue import Venue
 
 
 class EventOccurrence(Base):
@@ -23,5 +24,12 @@ class EventOccurrence(Base):
         DateTime(timezone=True), nullable=True
     )
 
+    location_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    venue_id: Mapped[int | None] = mapped_column(
+        ForeignKey("venues.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     # 🔹 ORM relationship
     event: Mapped["Event"] = relationship(back_populates="occurrences")
+    venue: Mapped["Venue | None"] = relationship(back_populates="occurrences")

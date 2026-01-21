@@ -29,5 +29,8 @@ class EventOccurrenceOut(BaseModel):
     id: int
     start_datetime_utc: datetime
     end_datetime_utc: datetime | None = None
+
+    location_text: str | None = None
+    venue: VenueOut | None = None
+
     event: EventOut
-    venue: VenueOut

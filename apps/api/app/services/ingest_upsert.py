@@ -4,21 +4,18 @@ from datetime import UTC, datetime
 from typing import Final
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.models.source import Source
-from app.models.venue import Venue
+from app.services.venue_resolver import resolve_venue_id
 
-# Keep this consistent everywhere (matches your Venue default)
 DEFAULT_TIMEZONE: Final[str] = "America/New_York"
 
 
 def slugify(value: str) -> str:
-    """
-    Simple, stable slugify for internal use (matches your seed script style).
-    """
     import re
 
     value = value.strip().lower()
@@ -32,68 +29,34 @@ def _truncate(value: str, max_len: int) -> str:
     return value[:max_len].rstrip("-")
 
 
-def get_or_create_venue_for_location(db: Session, location: str | None) -> Venue:
-    """
-    iCal LOCATION can be:
-      - empty
-      - a venue name
-      - a full address string
-      - multi-line strings
-
-    For now we create a "best effort" Venue row keyed by a slug derived from
-    LOCATION (or a stable TBD fallback). Later you can improve this with
-    venue matching / normalization.
-    """
-    if not location or not location.strip():
-        slug = "tbd"
-        name = "TBD (Sarasota Area)"
-        area = "Sarasota"
-        address = "Sarasota, FL"
-        website = None
-    else:
-        normalized = " ".join(location.split())  # collapse whitespace/newlines
-        slug = slugify(normalized) or "tbd"
-        slug = _truncate(slug, 120)
-
-        # Keep within your column limits (Venue.name likely String(255))
-        name = normalized[:255]
-        area = "Sarasota"
-        address = normalized[:255]
-        website = None
-
-    existing = db.scalar(select(Venue).where(Venue.slug == slug))
-    if existing:
-        return existing
-
-    v = Venue(
-        name=name,
-        slug=slug,
-        address=address,
-        area=area,
-        website=website,
-        timezone=DEFAULT_TIMEZONE,
-    )
-    db.add(v)
-    db.flush()
-    return v
-
-
 def _build_event_slug(*, title: str, source_id: int, external_id: str) -> str:
-    """
-    Produce a stable slug that is:
-      - readable (includes title)
-      - unlikely to collide across sources
-      - deterministic (based on external_id)
-    """
     base = slugify(title) or "event"
 
-    # external_id can be long (or include @domain); keep only a short stable fragment
     frag = external_id.split("@", 1)[0]
     frag = slugify(frag) or "ext"
     frag = _truncate(frag, 24)
 
     slug = f"{base}-{source_id}-{frag}"
     return _truncate(slug, 120)
+
+
+def _get_event(db: Session, *, source_id: int, external_id: str) -> Event | None:
+    return db.scalar(
+        select(Event).where(
+            Event.source_id == source_id, Event.external_id == external_id
+        )
+    )
+
+
+def _get_occurrence(
+    db: Session, *, event_id: int, start_utc: datetime
+) -> EventOccurrence | None:
+    return db.scalar(
+        select(EventOccurrence).where(
+            EventOccurrence.event_id == event_id,
+            EventOccurrence.start_datetime_utc == start_utc,
+        )
+    )
 
 
 def upsert_event_and_occurrence(
@@ -111,15 +74,13 @@ def upsert_event_and_occurrence(
 ) -> Event:
     """
     Generic iCal upsert:
-      - De-dupe Events by (source_id, external_id)
-      - De-dupe occurrences by (event_id, start_datetime_utc)
+      - Events dedupe: unique(source_id, external_id)
+      - Occurrences dedupe: unique(event_id, start_datetime_utc)
 
-    Notes:
-      - iCal feeds often don't provide price/free info, so we leave those unknown.
-      - Venue normalization is naive (LOCATION -> Venue). Improve later.
-
-    Returns the Event.
+    Stores raw LOCATION into EventOccurrence.location_text.
+    Attempts deterministic venue match -> EventOccurrence.venue_id.
     """
+
     if start_utc.tzinfo is None:
         raise ValueError("start_utc must be timezone-aware (UTC)")
 
@@ -127,20 +88,13 @@ def upsert_event_and_occurrence(
         raise ValueError("end_utc must be timezone-aware (UTC)")
 
     if end_utc is not None and end_utc < start_utc:
-        # Guard: some sources might do weird things; better to store None than invalid.
         end_utc = None
 
-    venue = get_or_create_venue_for_location(db, location)
-
     final_url = external_url or fallback_external_url
-
-    event = db.scalar(
-        select(Event).where(
-            Event.source_id == source.id, Event.external_id == external_id
-        )
-    )
-
     now = datetime.now(UTC)
+
+    # ---- Event upsert (airtight with uniqueness constraint) ----
+    event = _get_event(db, source_id=source.id, external_id=external_id)
 
     if event is None:
         slug = _build_event_slug(
@@ -150,44 +104,59 @@ def upsert_event_and_occurrence(
         event = Event(
             title=title,
             description=description,
-            venue_id=venue.id,
             slug=slug,
-            is_free=False,  # Unknown from iCal; you can improve later
+            is_free=False,  # unknown from iCal
             price_text=None,
             status="scheduled",
             source_id=source.id,
             external_id=external_id,
             external_url=final_url,
             last_seen_at=now,
+            venue_id=None,  # important: venue is now on occurrences
         )
         db.add(event)
-        db.flush()
+
+        try:
+            db.flush()  # may raise if another process inserted same (source_id, external_id)
+        except IntegrityError:
+            db.rollback()
+            event = _get_event(db, source_id=source.id, external_id=external_id)
+            if event is None:
+                raise
     else:
-        # Minimal, safe updates
         event.title = title
         event.description = description
-        event.venue_id = venue.id
         event.external_url = final_url
         event.last_seen_at = now
 
-    # Occurrence upsert
-    occ = db.scalar(
-        select(EventOccurrence).where(
-            EventOccurrence.event_id == event.id,
-            EventOccurrence.start_datetime_utc == start_utc,
-        )
-    )
+    # ---- Occurrence upsert (airtight with uniqueness constraint) ----
+    resolved_venue_id = resolve_venue_id(db, location)
+    occ = _get_occurrence(db, event_id=event.id, start_utc=start_utc)
 
     if occ is None:
-        db.add(
-            EventOccurrence(
-                event_id=event.id,
-                start_datetime_utc=start_utc,
-                end_datetime_utc=end_utc,
-            )
+        occ = EventOccurrence(
+            event_id=event.id,
+            start_datetime_utc=start_utc,
+            end_datetime_utc=end_utc,
+            location_text=location,
+            venue_id=resolved_venue_id,
         )
+        db.add(occ)
+
+        try:
+            db.flush()  # may raise if another process inserted same (event_id, start_datetime_utc)
+        except IntegrityError:
+            db.rollback()
+            occ = _get_occurrence(db, event_id=event.id, start_utc=start_utc)
+            if occ is None:
+                raise
+            # If it already existed, update it (safe idempotency)
+            occ.end_datetime_utc = end_utc
+            occ.location_text = location
+            occ.venue_id = resolved_venue_id
     else:
-        # Update end time if it changed
         occ.end_datetime_utc = end_utc
+        occ.location_text = location
+        occ.venue_id = resolved_venue_id
 
     return event

@@ -6,7 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
 if TYPE_CHECKING:
-    from app.models.event import Event  # only for type hints
+    from app.models.event_occurrence import EventOccurrence
+    from app.models.venue_alias import VenueAlias
 
 
 class Venue(Base):
@@ -20,6 +21,8 @@ class Venue(Base):
     slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="America/New_York")
     # 🔹 ORM relationship
-    events: Mapped[list["Event"]] = relationship(
-        back_populates="venue", cascade="all, delete-orphan"
+    occurrences: Mapped[list["EventOccurrence"]] = relationship(back_populates="venue")
+    aliases: Mapped[list["VenueAlias"]] = relationship(
+        back_populates="venue",
+        cascade="all, delete-orphan",
     )

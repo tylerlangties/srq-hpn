@@ -52,8 +52,9 @@ def events_for_day(
                 id=occ.id,
                 start_datetime_utc=occ.start_datetime_utc,
                 end_datetime_utc=occ.end_datetime_utc,
+                location_text=occ.location_text,
                 event=occ.event,  # type: ignore[arg-type]
-                venue=occ.event.venue,  # type: ignore[arg-type]
+                venue=occ.venue,  # type: ignore[arg-type]
             )
         )
 
@@ -106,8 +107,9 @@ def events_for_range(
                 id=occ.id,
                 start_datetime_utc=occ.start_datetime_utc,
                 end_datetime_utc=occ.end_datetime_utc,
+                location_text=occ.location_text,
                 event=occ.event,  # type: ignore[arg-type]
-                venue=occ.event.venue,  # type: ignore[arg-type]
+                venue=occ.venue,  # type: ignore[arg-type]
             )
         )
 
