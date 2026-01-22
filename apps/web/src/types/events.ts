@@ -19,5 +19,6 @@ export type EventOccurrenceOut = {
   start_datetime_utc: string; // ISO
   end_datetime_utc?: string | null;
   event: EventOut;
-  venue: VenueOut;
+  venue: VenueOut | null;
+  location_text?: string | null;
 };

@@ -7,7 +7,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_db
-from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.schemas.events import EventOccurrenceOut
 
@@ -42,7 +41,8 @@ def events_for_day(
         .where(EventOccurrence.start_datetime_utc >= start_utc)
         .where(EventOccurrence.start_datetime_utc < end_utc)
         .options(
-            selectinload(EventOccurrence.event).selectinload(Event.venue),
+            selectinload(EventOccurrence.event),
+            selectinload(EventOccurrence.venue),
         )
         .order_by(EventOccurrence.start_datetime_utc.asc())
     )
@@ -55,7 +55,7 @@ def events_for_day(
     )
 
     # Build response objects:
-    # EventOccurrenceOut expects "venue" on the payload; we attach it from occurrence.event.venue.
+    # EventOccurrenceOut expects "venue" on the payload; we attach it from occurrence.venue.
     results: list[EventOccurrenceOut] = []
     for occ in occurrences:
         results.append(
@@ -112,7 +112,8 @@ def events_for_range(
         .where(EventOccurrence.start_datetime_utc >= start_utc)
         .where(EventOccurrence.start_datetime_utc < end_utc)
         .options(
-            selectinload(EventOccurrence.event).selectinload(Event.venue),
+            selectinload(EventOccurrence.event),
+            selectinload(EventOccurrence.venue),
         )
         .order_by(EventOccurrence.start_datetime_utc.asc())
     )

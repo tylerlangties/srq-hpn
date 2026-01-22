@@ -5,6 +5,7 @@ import app.core.env  # noqa: F401
 from app.core.logging import setup_logging  # noqa: E402
 from app.db import db_smoke_test  # noqa: E402
 from app.routers.admin import router as admin_router  # noqa: E402
+from app.routers.admin_venues import router as admin_venues_router  # noqa: E402
 from app.routers.events import router as events_router  # noqa: E402
 
 # Configure logging before creating the app
@@ -22,6 +23,7 @@ app.add_middleware(
 
 app.include_router(events_router)
 app.include_router(admin_router)
+app.include_router(admin_venues_router)
 
 
 @app.get("/api/health")
