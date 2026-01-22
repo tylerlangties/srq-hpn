@@ -9,7 +9,6 @@ __pycache__/
 .ruff_cache
 *.py[cod]
 *.pyo
-scripts/
 
 #MISC
 event_sources.txt
