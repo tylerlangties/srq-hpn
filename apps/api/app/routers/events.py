@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -10,6 +11,8 @@ from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.schemas.events import EventOccurrenceOut
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/events", tags=["events"])
 
 SRQ_TZ = ZoneInfo("America/New_York")
@@ -20,6 +23,9 @@ def events_for_day(
     day: date = Query(..., description="Local date in YYYY-MM-DD (America/New_York)"),
     db: Session = Depends(get_db),
 ) -> list[EventOccurrenceOut]:
+    """Get events for a specific day."""
+    logger.debug("Fetching events for day", extra={"day": str(day)})
+
     # Local day boundaries (SRQ timezone)
     local_start = datetime.combine(day, time.min, tzinfo=SRQ_TZ)
     local_end = datetime.combine(
@@ -42,6 +48,11 @@ def events_for_day(
     )
 
     occurrences = db.scalars(stmt).all()
+
+    logger.info(
+        "Found events for day",
+        extra={"day": str(day), "count": len(occurrences)},
+    )
 
     # Build response objects:
     # EventOccurrenceOut expects "venue" on the payload; we attach it from occurrence.event.venue.
@@ -75,7 +86,15 @@ def events_for_range(
     Return all occurrences whose start_datetime_utc falls within the local date range
     [start 00:00, (end + 1 day) 00:00) converted to UTC.
     """
+    logger.debug(
+        "Fetching events for range", extra={"start": str(start), "end": str(end)}
+    )
+
     if end < start:
+        logger.warning(
+            "Invalid date range",
+            extra={"start": str(start), "end": str(end)},
+        )
         # FastAPI will serialize this nicely for clients
         raise ValueError("end must be >= start")
 
@@ -99,6 +118,11 @@ def events_for_range(
     )
 
     occurrences = db.scalars(stmt).all()
+
+    logger.info(
+        "Found events for range",
+        extra={"start": str(start), "end": str(end), "count": len(occurrences)},
+    )
 
     results: list[EventOccurrenceOut] = []
     for occ in occurrences:
