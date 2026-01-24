@@ -29,8 +29,10 @@ def upgrade() -> None:
             sa.ForeignKey("sources.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        # A stable identifier per discovered item in that source
-        # Example: mustdo UID, event page ID, slug, etc.
+        # Stable identifier for this iCal file/feed within the source.
+        # Used for deduplication: unique(source_id, external_id)
+        # Examples: "mustdo:event-slug", "2025-01" (for monthly feeds), or URL hash
+        # NOTE: This is NOT the same as Event.external_id (which is the iCal event UID)
         sa.Column("external_id", sa.String(length=255), nullable=False),
         # Human-facing page URL (preferred for users)
         sa.Column("page_url", sa.Text(), nullable=True),

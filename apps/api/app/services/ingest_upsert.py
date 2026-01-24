@@ -75,6 +75,8 @@ def upsert_event_and_occurrence(
     """
     Generic iCal upsert:
       - Events dedupe: unique(source_id, external_id)
+        * external_id should be the iCal event UID (from VEVENT.UID)
+        * This is different from SourceFeed.external_id (which identifies the iCal file)
       - Occurrences dedupe: unique(event_id, start_datetime_utc)
 
     Stores raw LOCATION into EventOccurrence.location_text.

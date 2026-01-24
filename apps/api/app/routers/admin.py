@@ -101,22 +101,22 @@ def ingest_source(source_id: int, db: Session = Depends(get_db)) -> dict:
     # automatically closes the session via get_db() generator
 
 
-@router.post("/source/{source_id}/items")
+@router.post("/source/{source_id}/feeds")
 def ingest_items_for_source(
     source_id: int, db: Session = Depends(get_db)
 ) -> dict[str, int]:
-    logger.info("Starting source items ingestion", extra={"source_id": source_id})
+    logger.info("Starting source feeds ingestion", extra={"source_id": source_id})
     source = db.get(Source, source_id)
     if source is None:
         logger.warning(
-            "Source not found for items ingestion", extra={"source_id": source_id}
+            "Source not found for feeds ingestion", extra={"source_id": source_id}
         )
-        return {"items_seen": 0, "events_ingested": 0, "errors": 1}
+        return {"feeds_seen": 0, "events_ingested": 0, "errors": 1}
 
     result = ingest_source_items(db, source=source, limit=50)
     db.commit()
     logger.info(
-        "Source items ingestion completed",
+        "Source feeds ingestion completed",
         extra={"source_id": source_id, **result},
     )
     return {"source_id": source_id, **result}

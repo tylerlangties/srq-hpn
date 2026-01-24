@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from app.models.source import Source
 
 
-class SourceItem(Base):
-    __tablename__ = "source_items"
+class SourceFeed(Base):
+    __tablename__ = "source_feeds"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
@@ -21,8 +21,12 @@ class SourceItem(Base):
         ForeignKey("sources.id", ondelete="CASCADE"),
         nullable=False,
     )
-    source: Mapped[Source] = relationship(back_populates="items")  # type: ignore[name-defined]
+    source: Mapped[Source] = relationship(back_populates="feeds")  # type: ignore[name-defined]
 
+    # Stable identifier for this iCal file/feed within the source.
+    # Used for deduplication: unique(source_id, external_id)
+    # Examples: "mustdo:event-slug", "2025-01" (for monthly feeds), or URL hash
+    # NOTE: This is NOT the same as Event.external_id (which is the iCal event UID)
     external_id: Mapped[str] = mapped_column(String(255), nullable=False)
     page_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     ical_url: Mapped[str] = mapped_column(Text, nullable=False)
@@ -39,6 +43,11 @@ class SourceItem(Base):
 
     etag: Mapped[str | None] = mapped_column(String(255), nullable=True)
     last_modified: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Track how many events were parsed/ingested from this iCal file
+    # Useful for multi-event iCal files (e.g., monthly feeds with dozens of events)
+    events_parsed: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    events_ingested: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 

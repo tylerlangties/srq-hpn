@@ -31,6 +31,9 @@ class Event(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="scheduled"
     )  # scheduled|canceled
+    # Stable identifier for this event within the source (typically the iCal UID from VEVENT).
+    # Used for deduplication: unique(source_id, external_id)
+    # NOTE: This is NOT the same as SourceFeed.external_id (which identifies the iCal file/feed)
     external_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, index=True
     )
