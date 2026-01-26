@@ -12,14 +12,28 @@ class VenueOut(BaseModel):
     area: str | None = None
 
 
+class VenueDetailOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+    area: str | None = None
+    address: str | None = None
+    website: str | None = None
+    timezone: str | None = None
+
+
 class EventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     title: str
     slug: str
+    description: str | None = None
     is_free: bool
     price_text: str | None = None
+    external_url: str | None = None
     status: str
 
 

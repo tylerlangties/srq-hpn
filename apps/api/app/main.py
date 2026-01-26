@@ -10,6 +10,7 @@ from app.routers.admin_ingest_items import (
 )
 from app.routers.admin_venues import router as admin_venues_router  # noqa: E402
 from app.routers.events import router as events_router  # noqa: E402
+from app.routers.venues import router as venues_router  # noqa: E402
 
 # Configure logging before creating the app
 setup_logging()
@@ -25,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(events_router)
+app.include_router(venues_router)
 app.include_router(admin_router)
 app.include_router(admin_venues_router)
 app.include_router(admin_ingest_items_router)
