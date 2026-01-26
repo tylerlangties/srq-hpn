@@ -17,6 +17,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
+    root.dataset.theme = newTheme;
     if (newTheme === "dark") {
       root.classList.add("dark");
     } else {
@@ -35,16 +36,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const initialTheme =
       savedTheme || (systemPrefersDark ? "dark" : "light");
 
-    // Always apply the theme to ensure it's set
-    applyTheme(initialTheme);
     setTheme(initialTheme);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    applyTheme(theme);
+    localStorage.setItem("theme", theme);
+  }, [mounted, theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
   };
 
   // Always provide context, but theme might not be initialized yet

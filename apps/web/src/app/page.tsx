@@ -1,14 +1,190 @@
-import HomeQuickSwitch from "./ui/HomeQuickSwitch";
-import WeeklyEvents from "./ui/WeeklyEvents";
+"use client";
+
+import AppLayout from "./components/AppLayout";
+import HeroSection from "./components/home/HeroSection";
+import SectionHeader from "./components/home/SectionHeader";
+import EventCardLarge from "./components/home/EventCardLarge";
+import EventCardCompact from "./components/home/EventCardCompact";
+import ArticlesSection from "./components/home/ArticlesSection";
+import NewsletterCTA from "./components/home/NewsletterCTA";
+import { useEventsForDay, useEventsForRange } from "./hooks/useEvents";
+import { useWeather } from "./hooks/useWeather";
+import { addDays, startOfWeekend, toYmd } from "@/lib/dates";
+
+function formatWeatherLine(temp: number | null, condition: string) {
+  const tempLabel = temp === null ? "—" : `${temp}°`;
+  return `${tempLabel} and ${condition}`;
+}
 
 export default function HomePage() {
+  const today = new Date();
+  const tomorrow = addDays(today, 1);
+  const weekendStart = startOfWeekend(today);
+  const weekendEnd = addDays(weekendStart, 1);
+
+  const todayYmd = toYmd(today);
+  const tomorrowYmd = toYmd(tomorrow);
+  const weekendStartYmd = toYmd(weekendStart);
+  const weekendEndYmd = toYmd(weekendEnd);
+
+  const todayEvents = useEventsForDay(todayYmd);
+  const tomorrowEvents = useEventsForDay(tomorrowYmd);
+  const weekendEvents = useEventsForRange(weekendStartYmd, weekendEndYmd);
+  const weather = useWeather();
+
+  const featuredEvent = todayEvents.data?.[0] ?? null;
+  const todaySubtitle = weather.data
+    ? `Today · ${formatWeatherLine(
+        weather.data.today.temp,
+        weather.data.today.condition
+      )}`
+    : "Today · Weather loading";
+  const tomorrowSubtitle = weather.data
+    ? `Tomorrow · ${formatWeatherLine(
+        weather.data.tomorrow.temp,
+        weather.data.tomorrow.condition
+      )}`
+    : "Tomorrow · Weather loading";
+  const weekendSubtitle = weather.data
+    ? `Weekend · ${formatWeatherLine(
+        weather.data.weekend.temp,
+        weather.data.weekend.condition
+      )}`
+    : "Weekend · Weather loading";
+
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">SRQ Happenings</h1>
-      <div className="space-y-8">
-        <HomeQuickSwitch />
-        <WeeklyEvents start="2026-01-18" end="2026-01-25" title="This week in Sarasota" />
+    <AppLayout showAmbient>
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
+        <HeroSection
+          featuredEvent={featuredEvent}
+          weather={weather.data}
+          weatherLoading={weather.loading}
+          weatherError={weather.error}
+        />
+
+        <section className="py-8 border-t border-white/50 dark:border-white/10">
+          <SectionHeader
+            title="Today"
+            subtitle={todaySubtitle}
+            icon="✦"
+            tone="coral"
+          />
+
+          {todayEvents.error ? (
+            <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-5 text-sm text-red-700 dark:text-red-300">
+              {todayEvents.error}
+            </div>
+          ) : todayEvents.loading ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {[0, 1].map((key) => (
+                <div
+                  key={key}
+                  className="h-28 rounded-2xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : todayEvents.data && todayEvents.data.length > 0 ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {todayEvents.data.map((event, index) => (
+                <EventCardLarge
+                  key={event.id}
+                  event={event}
+                  featured={index === 0}
+                  tone="coral"
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted dark:text-white/50">
+              No events found today. Check back soon.
+            </p>
+          )}
+        </section>
+
+        <section className="py-8 border-t border-white/50 dark:border-white/10">
+          <SectionHeader
+            title="Tomorrow"
+            subtitle={tomorrowSubtitle}
+            icon="☀"
+            tone="palm"
+          />
+
+          {tomorrowEvents.error ? (
+            <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-5 text-sm text-red-700 dark:text-red-300">
+              {tomorrowEvents.error}
+            </div>
+          ) : tomorrowEvents.loading ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {[0, 1].map((key) => (
+                <div
+                  key={key}
+                  className="h-28 rounded-2xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : tomorrowEvents.data && tomorrowEvents.data.length > 0 ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {tomorrowEvents.data.map((event, index) => (
+                <EventCardLarge
+                  key={event.id}
+                  event={event}
+                  featured={index === 0}
+                  tone="palm"
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted dark:text-white/50">
+              No events found tomorrow. Check back soon.
+            </p>
+          )}
+        </section>
+
+        <section className="py-8 border-t border-white/50 dark:border-white/10">
+          <SectionHeader
+            title="This Weekend"
+            subtitle={weekendSubtitle}
+            icon="◈"
+            tone="gulf"
+            action={
+              <button className="text-sm font-medium text-gulf hover:text-gulf/80 transition flex items-center gap-1 dark:text-purple-300 dark:hover:text-purple-200">
+                See all events
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            }
+          />
+
+          {weekendEvents.error ? (
+            <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-5 text-sm text-red-700 dark:text-red-300">
+              {weekendEvents.error}
+            </div>
+          ) : weekendEvents.loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[0, 1, 2, 3].map((key) => (
+                <div
+                  key={key}
+                  className="h-40 rounded-2xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : weekendEvents.data && weekendEvents.data.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {weekendEvents.data.slice(0, 4).map((event) => (
+                <EventCardCompact key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted dark:text-white/50">
+              No weekend events found yet.
+            </p>
+          )}
+        </section>
+
+        <ArticlesSection />
+        <NewsletterCTA />
       </div>
-    </main>
+    </AppLayout>
   );
 }

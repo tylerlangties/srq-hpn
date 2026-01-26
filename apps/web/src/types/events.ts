@@ -5,12 +5,24 @@ export type VenueOut = {
   area?: string | null;
 };
 
+export type VenueDetailOut = {
+  id: number;
+  name: string;
+  slug: string;
+  area?: string | null;
+  address?: string | null;
+  website?: string | null;
+  timezone?: string | null;
+};
+
 export type EventOut = {
   id: number;
   title: string;
   slug: string;
+  description?: string | null;
   is_free: boolean;
   price_text?: string | null;
+  external_url?: string | null;
   status: "scheduled" | "canceled" | string;
 };
 

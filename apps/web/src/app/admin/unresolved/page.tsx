@@ -20,6 +20,7 @@ export default function UnresolvedLocationsPage() {
   const [linkingVenue, setLinkingVenue] = useState<string | null>(null);
   const [newVenueName, setNewVenueName] = useState("");
   const [newVenueArea, setNewVenueArea] = useState("");
+  const [newVenueAliases, setNewVenueAliases] = useState<string[]>([]);
   const [selectedVenueId, setSelectedVenueId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -55,12 +56,16 @@ export default function UnresolvedLocationsPage() {
         location_text: locationText,
         name: newVenueName.trim(),
         area: newVenueArea.trim() || null,
+        aliases: newVenueAliases.filter((a) => a.trim()).length > 0
+          ? newVenueAliases.filter((a) => a.trim())
+          : null,
       };
 
       await apiPost("/api/admin/venues/create-from-location", request);
       setCreatingVenue(null);
       setNewVenueName("");
       setNewVenueArea("");
+      setNewVenueAliases([]);
       await loadData(); // Refresh list
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -191,6 +196,7 @@ export default function UnresolvedLocationsPage() {
                       setLinkingVenue(null);
                       setNewVenueName(group.location_text);
                       setNewVenueArea("");
+                      setNewVenueAliases([]);
                     }}
                     className={`rounded-lg border-2 px-3 py-1.5 text-xs font-medium transition-colors ${
                       creatingVenue === group.location_text
@@ -241,6 +247,52 @@ export default function UnresolvedLocationsPage() {
                         placeholder="e.g., Sarasota, Downtown"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                        Aliases (optional)
+                      </label>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        Add alternative names for this venue to help with matching
+                      </p>
+                      <div className="space-y-2">
+                        {newVenueAliases.map((alias, index) => (
+                          <div key={index} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={alias}
+                              onChange={(e) => {
+                                const updated = [...newVenueAliases];
+                                updated[index] = e.target.value;
+                                setNewVenueAliases(updated);
+                              }}
+                              className="flex-1 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                              placeholder="Enter alias"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = newVenueAliases.filter(
+                                  (_, i) => i !== index
+                                );
+                                setNewVenueAliases(updated);
+                              }}
+                              className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewVenueAliases([...newVenueAliases, ""]);
+                          }}
+                          className="w-full rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                        >
+                          + Add Alias
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleCreateVenue(group.location_text)}
@@ -253,6 +305,7 @@ export default function UnresolvedLocationsPage() {
                           setCreatingVenue(null);
                           setNewVenueName("");
                           setNewVenueArea("");
+                          setNewVenueAliases([]);
                         }}
                         className="rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                       >

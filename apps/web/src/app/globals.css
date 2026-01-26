@@ -1,27 +1,94 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
+  --color-sand: #F6F1EB;
+  --color-cloud: #FCFBF9;
+  --color-gulf: #1FB6B2;
+  --color-coral: #FF7A5C;
+  --color-palm: #3A7F6B;
+  --color-charcoal: #2F2F2F;
+  --color-muted: #6B6B6B;
+  --font-heading: var(--font-bricolage);
+  --font-body: var(--font-dm-sans);
+  --page-bg: #F6F1EB;
+  --page-text: #2F2F2F;
+  --page-muted: #6B6B6B;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="dark"] {
+  --font-heading: var(--font-instrument);
+  --font-body: var(--font-space);
+  --page-bg: #0a0a0b;
+  --page-text: #ffffff;
+  --page-muted: rgba(255, 255, 255, 0.6);
+}
+
+@theme {
+  --color-sand: #F6F1EB;
+  --color-cloud: #FCFBF9;
+  --color-gulf: #1FB6B2;
+  --color-coral: #FF7A5C;
+  --color-palm: #3A7F6B;
+  --color-charcoal: #2F2F2F;
+  --color-muted: #6B6B6B;
 }
 
 body {
-  background: #f9fafb;
-  color: #111827;
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  background: var(--page-bg);
+  color: var(--page-text);
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.dark body {
-  background: #111827;
-  color: #f9fafb;
+.fade-up,
+.rise-in {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp 0.8s ease forwards;
+}
+
+.rise-in {
+  transform: translateY(18px);
+  animation-name: riseIn;
+  animation-duration: 0.85s;
+}
+
+.delay-1 {
+  animation-delay: 0.12s;
+}
+
+.delay-2 {
+  animation-delay: 0.22s;
+}
+
+.delay-3 {
+  animation-delay: 0.32s;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -31,6 +31,7 @@ export type CreateVenueFromLocationRequest = {
   name: string;
   area?: string | null;
   address?: string | null;
+  aliases?: string[] | null;
 };
 
 export type AddAliasRequest = {

@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../providers/theme-provider";
 
-export default function ThemeSwitcher() {
+type Props = {
+  className?: string;
+};
+
+export default function ThemeSwitcher({ className }: Props) {
   const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -15,7 +19,9 @@ export default function ThemeSwitcher() {
   if (!mounted) {
     // Return a placeholder with the same dimensions to prevent layout shift
     return (
-      <div className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 shadow-lg">
+      <div
+        className={`p-2 rounded-lg bg-white dark:bg-white/5 border-2 border-gray-300 dark:border-white/20 shadow-lg ${className ?? ""}`}
+      >
         <div className="w-5 h-5" />
       </div>
     );
@@ -24,7 +30,7 @@ export default function ThemeSwitcher() {
   return (
     <button
       onClick={toggleTheme}
-      className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 shadow-lg hover:shadow-xl transition-all hover:scale-110"
+      className={`p-2 rounded-lg bg-white/80 dark:bg-white/5 border-2 border-gray-300/80 dark:border-white/20 shadow-lg hover:shadow-xl transition-all hover:scale-105 ${className ?? ""}`}
       aria-label="Toggle theme"
     >
       {theme === "light" ? (
