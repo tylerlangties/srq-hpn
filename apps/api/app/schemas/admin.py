@@ -39,6 +39,7 @@ class CreateVenueFromLocationRequest(BaseModel):
     name: str
     area: str | None = None
     address: str | None = None
+    aliases: list[str] | None = None
 
 
 class VenueOut(BaseModel):

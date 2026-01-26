@@ -193,6 +193,43 @@ def create_venue_from_location(
     )
     db.add(alias)
 
+    # Create additional aliases if provided
+    aliases_to_create = set()  # Use set to avoid duplicates
+    if request.aliases:
+        for alias_text in request.aliases:
+            alias_text = alias_text.strip()
+            if alias_text:  # Only add non-empty aliases
+                aliases_to_create.add(alias_text)
+
+    # Create aliases, checking for duplicates
+    for alias_text in aliases_to_create:
+        normalized_alias = normalize_location(alias_text)
+        # Skip if this normalized alias already exists (including the location_text one)
+        if normalized_alias == normalized:
+            continue  # Skip duplicate of location_text alias
+
+        # Check if normalized alias already exists for any venue
+        existing_alias = db.scalar(
+            select(VenueAlias).where(VenueAlias.alias_normalized == normalized_alias)
+        )
+        if existing_alias:
+            logger.warning(
+                "Skipping duplicate alias",
+                extra={
+                    "venue_id": venue.id,
+                    "alias": alias_text,
+                    "existing_venue_id": existing_alias.venue_id,
+                },
+            )
+            continue
+
+        new_alias = VenueAlias(
+            venue_id=venue.id,
+            alias=alias_text,
+            alias_normalized=normalized_alias,
+        )
+        db.add(new_alias)
+
     # Optionally link all occurrences with matching location_text
     matching_occurrences = db.scalars(
         select(EventOccurrence).where(
