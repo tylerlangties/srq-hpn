@@ -38,10 +38,18 @@ export default function Footer() {
           <div>
             <p className="font-semibold text-charcoal dark:text-white mb-4">Categories</p>
             <div className="space-y-2 text-sm text-muted dark:text-white/50">
-              <p className="hover:text-charcoal dark:hover:text-white transition">Music</p>
-              <p className="hover:text-charcoal dark:hover:text-white transition">Arts & Culture</p>
-              <p className="hover:text-charcoal dark:hover:text-white transition">Food & Drink</p>
-              <p className="hover:text-charcoal dark:hover:text-white transition">Outdoors</p>
+              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
+                Music
+              </Link>
+              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
+                Arts & Culture
+              </Link>
+              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
+                Food & Drink
+              </Link>
+              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
+                Outdoors
+              </Link>
             </div>
           </div>
           <div>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
 import { formatEventTime, formatDayLabel } from "./event-utils";
 
@@ -9,8 +10,10 @@ export default function EventCardCompact({ event }: Props) {
   const time = formatEventTime(event);
   const day = formatDayLabel(event);
   const venue = event.venue?.name ?? event.location_text ?? "Location TBA";
+  const href = event.event.external_url ?? "/events";
+  const isExternal = Boolean(event.event.external_url);
 
-  return (
+  const card = (
     <article className="group rounded-2xl bg-white/80 border border-white/60 p-4 hover:bg-white hover:shadow-lg hover:shadow-charcoal/5 transition-all cursor-pointer backdrop-blur-sm dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:shadow-purple-500/5">
       <div className="flex items-center justify-between mb-3">
         <div className="h-3 w-3 rounded-full bg-gulf dark:bg-gradient-to-r dark:from-purple-400 dark:to-pink-400"></div>
@@ -33,5 +36,19 @@ export default function EventCardCompact({ event }: Props) {
         </span>
       </div>
     </article>
+  );
+
+  if (isExternal) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="block">
+        {card}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className="block">
+      {card}
+    </Link>
   );
 }

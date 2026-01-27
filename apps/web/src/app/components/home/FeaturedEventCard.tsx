@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
 import { formatEventTime } from "./event-utils";
 
@@ -8,8 +9,10 @@ type Props = {
 export default function FeaturedEventCard({ event }: Props) {
   const time = formatEventTime(event);
   const venue = event.venue?.name ?? event.location_text ?? "Location TBA";
+  const href = event.event.external_url ?? "/events";
+  const isExternal = Boolean(event.event.external_url);
 
-  return (
+  const card = (
     <div className="relative rounded-3xl bg-gradient-to-br from-white/90 to-white/70 border border-white/60 p-6 shadow-2xl shadow-coral/10 backdrop-blur-sm dark:bg-gradient-to-br dark:from-white/10 dark:to-white/5 dark:border-white/10 dark:shadow-none">
       <div className="absolute -top-3 -right-3 rounded-full bg-coral px-4 py-1.5 text-xs font-bold text-white shadow-lg dark:bg-gradient-to-r dark:from-purple-500 dark:to-pink-500">
         Featured
@@ -40,5 +43,19 @@ export default function FeaturedEventCard({ event }: Props) {
         </span>
       </div>
     </div>
+  );
+
+  if (isExternal) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="block">
+        {card}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className="block">
+      {card}
+    </Link>
   );
 }

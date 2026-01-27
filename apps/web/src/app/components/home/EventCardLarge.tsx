@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
 import { formatEventTime } from "./event-utils";
 
@@ -11,6 +12,8 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
   const time = formatEventTime(event);
   const venue = event.venue?.name ?? event.location_text ?? "Location TBA";
   const area = event.venue?.area ?? "Sarasota";
+  const href = event.event.external_url ?? "/events";
+  const isExternal = Boolean(event.event.external_url);
 
   const toneClasses =
     tone === "palm"
@@ -24,7 +27,7 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
     ? `bg-gradient-to-r ${toneClasses} border-2 hover:shadow-lg`
     : "bg-white/80 border border-white/60 hover:bg-white hover:shadow-md dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20";
 
-  return (
+  const card = (
     <article className={`${baseClasses} ${bgClasses}`}>
       <div className="flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex items-center gap-4 flex-1">
@@ -67,10 +70,24 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
             </div>
           </div>
         </div>
-        <button className="rounded-full border border-charcoal/10 bg-white/70 px-4 py-2 text-sm font-medium text-charcoal hover:bg-white transition md:self-center dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
+        <span className="rounded-full border border-charcoal/10 bg-white/70 px-4 py-2 text-sm font-medium text-charcoal hover:bg-white transition md:self-center dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
           Details →
-        </button>
+        </span>
       </div>
     </article>
+  );
+
+  if (isExternal) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="block">
+        {card}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className="block">
+      {card}
+    </Link>
   );
 }

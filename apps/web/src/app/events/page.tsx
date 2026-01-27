@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import EventCardLarge from "../components/home/EventCardLarge";
 import { useEventsForRange } from "../hooks/useEvents";
@@ -11,6 +12,13 @@ export default function EventsPage() {
   const end = toYmd(addDays(today, 6));
 
   const events = useEventsForRange(start, end);
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
+
+  const filteredEvents = useMemo(() => {
+    if (!events.data) return null;
+    if (!showFreeOnly) return events.data;
+    return events.data.filter((event) => event.event.is_free);
+  }, [events.data, showFreeOnly]);
 
   return (
     <AppLayout>
@@ -28,10 +36,22 @@ export default function EventsPage() {
           <button className="rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white dark:bg-white/10">
             Next 7 days
           </button>
-          <button className="rounded-full border border-charcoal/10 px-4 py-2 text-sm font-semibold text-charcoal dark:border-white/20 dark:text-white">
+          <button
+            type="button"
+            onClick={() => setShowFreeOnly((prev) => !prev)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              showFreeOnly
+                ? "bg-charcoal text-white dark:bg-white/10 dark:text-white"
+                : "border border-charcoal/10 text-charcoal dark:border-white/20 dark:text-white"
+            }`}
+          >
             Free events
           </button>
-          <button className="rounded-full border border-charcoal/10 px-4 py-2 text-sm font-semibold text-charcoal dark:border-white/20 dark:text-white">
+          <button
+            type="button"
+            disabled
+            className="rounded-full border border-charcoal/10 px-4 py-2 text-sm font-semibold text-muted/70 dark:border-white/20 dark:text-white/40 cursor-not-allowed"
+          >
             Family-friendly
           </button>
         </div>
@@ -49,15 +69,17 @@ export default function EventsPage() {
               />
             ))}
           </div>
-        ) : events.data && events.data.length > 0 ? (
+        ) : filteredEvents && filteredEvents.length > 0 ? (
           <div className="grid gap-4 lg:grid-cols-2">
-            {events.data.map((event) => (
+            {filteredEvents.map((event) => (
               <EventCardLarge key={event.id} event={event} />
             ))}
           </div>
         ) : (
           <p className="text-sm text-muted dark:text-white/60">
-            No events found for the next week.
+            {showFreeOnly
+              ? "No free events found for the next week."
+              : "No events found for the next week."}
           </p>
         )}
       </div>
