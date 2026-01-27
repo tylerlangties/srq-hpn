@@ -118,9 +118,22 @@ def ingest_source_items(
                     external_url=ev.url,
                     fallback_external_url=item.page_url,
                 )
+
+                # Apply categories from iCal file
                 for category_name in ev.categories:
                     category = _get_or_create_category(db, category_name)
                     _attach_category(db, event_id=event.id, category_id=category.id)
+
+                # Apply custom categories from source_feed (if set)
+                if item.categories:
+                    for category_name in item.categories.split(","):
+                        category_name = category_name.strip()
+                        if category_name:
+                            category = _get_or_create_category(db, category_name)
+                            _attach_category(
+                                db, event_id=event.id, category_id=category.id
+                            )
+
                 events_ingested_count += 1
                 ingested += 1
 

@@ -51,6 +51,10 @@ class SourceFeed(Base):
 
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Custom categories to apply during ingestion (comma-separated)
+    # These are used instead of or in addition to categories from iCal files
+    categories: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

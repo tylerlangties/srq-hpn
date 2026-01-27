@@ -37,3 +37,28 @@ export type CreateVenueFromLocationRequest = {
 export type AddAliasRequest = {
   alias: string;
 };
+
+export type SourceOut = {
+  id: number;
+  name: string;
+  type: string;
+  feed_count: number;
+};
+
+export type IngestResult = {
+  source_id: number;
+  feeds_seen: number;
+  events_ingested: number;
+  errors: number;
+};
+
+export type SourceFeedCleanupRequest = {
+  older_than_days: number;
+  source_id?: number | null;
+  dry_run?: boolean;
+};
+
+export type SourceFeedCleanupResult = {
+  deleted?: number;
+  would_delete?: number;
+};

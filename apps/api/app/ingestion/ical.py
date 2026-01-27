@@ -2,16 +2,20 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import recurring_ical_events  # type: ignore[import-untyped]
 import requests
 from icalendar import Calendar  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_TZ = ZoneInfo("America/New_York")
+
+# How far into the future to expand recurring events (6 months)
+DEFAULT_EXPAND_MONTHS = 6
 
 HEADERS = {
     "User-Agent": (
@@ -111,18 +115,34 @@ def parse_ics(
     ics_bytes: bytes,
     *,
     default_tz: ZoneInfo = DEFAULT_TZ,
+    expand_months: int = DEFAULT_EXPAND_MONTHS,
 ) -> list[ParsedICalEvent]:
-    """Parse iCal bytes into a list of events."""
-    logger.debug("Parsing iCal data", extra={"bytes_length": len(ics_bytes)})
+    """
+    Parse iCal bytes into a list of events.
+
+    Expands recurring events (RRULE, RDATE) into individual occurrences
+    within the date range from now to `expand_months` in the future.
+    """
+    logger.debug(
+        "Parsing iCal data",
+        extra={"bytes_length": len(ics_bytes), "expand_months": expand_months},
+    )
     try:
         cal = Calendar.from_ical(ics_bytes)
         out: list[ParsedICalEvent] = []
 
-        for comp in cal.walk("VEVENT"):
+        # Define the date range for expanding recurring events
+        now = datetime.now(UTC)
+        start_range = now - timedelta(days=1)  # Include events starting yesterday
+        end_range = now + timedelta(days=expand_months * 30)
+
+        # Use recurring_ical_events to expand recurring events
+        # This handles RRULE, RDATE, EXDATE, etc.
+        expanded_events = recurring_ical_events.of(cal).between(start_range, end_range)
+
+        for comp in expanded_events:
             uid = str(comp.get("UID") or "").strip()
             if not uid:
-                # If no UID, it's hard to reliably de-dupe.
-                # You *can* synthesize later, but skip for now.
                 logger.debug("Skipping event without UID")
                 continue
 
@@ -168,7 +188,11 @@ def parse_ics(
 
         logger.info(
             "Successfully parsed iCal data",
-            extra={"events_parsed": len(out), "default_tz": str(default_tz)},
+            extra={
+                "events_parsed": len(out),
+                "default_tz": str(default_tz),
+                "expand_months": expand_months,
+            },
         )
         return out
     except Exception as e:
