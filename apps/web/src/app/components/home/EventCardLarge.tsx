@@ -21,7 +21,7 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
       : "from-coral/10 to-gulf/10 border-coral/30 hover:shadow-coral/10 dark:from-purple-600/10 dark:to-pink-600/10 dark:border-purple-500/30";
 
   const baseClasses =
-    "group rounded-2xl p-5 transition-all cursor-pointer backdrop-blur-sm";
+    "group rounded-2xl p-5 transition-all cursor-pointer backdrop-blur-sm min-h-40";
 
   const bgClasses = featured
     ? `bg-gradient-to-r ${toneClasses} border-2 hover:shadow-lg`
@@ -47,7 +47,7 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-[var(--font-heading)] font-bold text-charcoal group-hover:text-coral transition dark:text-white dark:group-hover:text-purple-300">
+              <h3 className="text-lg font-[var(--font-heading)] font-bold text-charcoal group-hover:text-coral transition dark:text-white dark:group-hover:text-purple-300 line-clamp-2">
                 {event.event.title}
               </h3>
               {featured ? (
@@ -56,7 +56,7 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
                 </span>
               ) : null}
             </div>
-            <p className="text-sm text-muted dark:text-white/50 mb-2">
+            <p className="text-sm text-muted dark:text-white/50 mb-2 line-clamp-4">
               {event.event.description ?? "Details coming soon."}
             </p>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted dark:text-white/40">
@@ -70,7 +70,7 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
             </div>
           </div>
         </div>
-        <span className="rounded-full border border-charcoal/10 bg-white/70 px-4 py-2 text-sm font-medium text-charcoal hover:bg-white transition md:self-center dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
+        <span className="hidden md:inline-flex rounded-full border border-charcoal/10 bg-white/70 px-4 py-2 text-sm font-medium text-charcoal hover:bg-white transition self-center dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
           Details →
         </span>
       </div>

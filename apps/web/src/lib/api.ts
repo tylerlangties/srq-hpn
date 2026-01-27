@@ -32,3 +32,21 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API ${res.status} ${res.statusText}: ${text}`);
+  }
+
+  return res.json() as Promise<T>;
+}

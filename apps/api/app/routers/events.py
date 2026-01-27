@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_db
+from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.schemas.events import EventOccurrenceOut
 
@@ -38,8 +39,10 @@ def events_for_day(
 
     stmt = (
         select(EventOccurrence)
+        .join(Event, EventOccurrence.event_id == Event.id)
         .where(EventOccurrence.start_datetime_utc >= start_utc)
         .where(EventOccurrence.start_datetime_utc < end_utc)
+        .where(Event.hidden.is_(False))
         .options(
             selectinload(EventOccurrence.event),
             selectinload(EventOccurrence.venue),
@@ -109,8 +112,10 @@ def events_for_range(
 
     stmt = (
         select(EventOccurrence)
+        .join(Event, EventOccurrence.event_id == Event.id)
         .where(EventOccurrence.start_datetime_utc >= start_utc)
         .where(EventOccurrence.start_datetime_utc < end_utc)
+        .where(Event.hidden.is_(False))
         .options(
             selectinload(EventOccurrence.event),
             selectinload(EventOccurrence.venue),

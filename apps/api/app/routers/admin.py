@@ -4,13 +4,15 @@ import logging
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.ingestion.ical import fetch_ics, parse_ics
+from app.models.event import Event
+from app.models.event_occurrence import EventOccurrence
 from app.models.source import Source
 from app.models.source_feed import SourceFeed
 from app.services.ingest_upsert import upsert_event_and_occurrence
@@ -37,6 +39,140 @@ class SourceOut(BaseModel):
     name: str
     type: str
     feed_count: int
+
+
+class EventSearchOut(BaseModel):
+    id: int
+    title: str
+    source_name: str
+    hidden: bool
+    first_start_utc: str | None = None  # ISO datetime of earliest occurrence, if any
+
+
+class EventHiddenUpdate(BaseModel):
+    hidden: bool = Field(
+        ..., description="Whether the event is hidden from the public API"
+    )
+
+
+class HideBulkRequest(BaseModel):
+    event_ids: list[int] | None = Field(
+        None, description="Event IDs to hide/unhide (takes precedence if set)"
+    )
+    source_name: str | None = Field(
+        None, description="Source name (e.g. 'mustdo') when using external_ids"
+    )
+    external_ids: list[str] | None = Field(
+        None, description="Event external_ids (requires source_name)"
+    )
+    hidden: bool = Field(True, description="Set hidden=True to hide, False to unhide")
+
+
+@router.get("/events/search", response_model=list[EventSearchOut])
+def search_events(
+    q: str = Query(..., min_length=1, description="Title substring or event ID"),
+    limit: int = Query(20, ge=1, le=50),
+    db: Session = Depends(get_db),
+) -> list[EventSearchOut]:
+    """
+    Search events by title or by numeric event ID.
+    Returns id, title, source_name, hidden, and earliest occurrence start (if any).
+    """
+    q = q.strip()
+    if not q:
+        return []
+
+    cond = Event.title.ilike(f"%{q}%")
+    if q.isdigit():
+        cond = or_(Event.id == int(q), cond)
+
+    first_occ = (
+        select(
+            EventOccurrence.event_id,
+            func.min(EventOccurrence.start_datetime_utc).label("first_start"),
+        )
+        .group_by(EventOccurrence.event_id)
+        .subquery()
+    )
+    stmt = (
+        select(
+            Event.id,
+            Event.title,
+            Event.hidden,
+            Source.name.label("source_name"),
+            first_occ.c.first_start,
+        )
+        .select_from(Event)
+        .join(Source, Event.source_id == Source.id)
+        .outerjoin(first_occ, Event.id == first_occ.c.event_id)
+        .where(cond)
+        .order_by(Event.id.desc())
+        .limit(limit)
+    )
+    rows = db.execute(stmt).all()
+    return [
+        EventSearchOut(
+            id=r.id,
+            title=r.title,
+            source_name=r.source_name,
+            hidden=r.hidden,
+            first_start_utc=r.first_start.isoformat() if r.first_start else None,
+        )
+        for r in rows
+    ]
+
+
+@router.patch("/events/{event_id}")
+def update_event_hidden(
+    event_id: int,
+    body: EventHiddenUpdate,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Set or clear the hidden flag on an event. Hidden events are excluded from public APIs."""
+    event = db.scalar(select(Event).where(Event.id == event_id))
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    event.hidden = body.hidden
+    db.commit()
+    return {"event_id": event_id, "hidden": event.hidden}
+
+
+@router.post("/events/hide-bulk")
+def hide_events_bulk(
+    body: HideBulkRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Bulk set hidden on events by event_ids or by (source_name, external_ids).
+    Use event_ids for a known list of IDs; use source_name+external_ids for mustdo etc.
+    """
+    if body.event_ids:
+        stmt = select(Event).where(Event.id.in_(body.event_ids))
+        events = list(db.scalars(stmt).all())
+        updated = sum(1 for e in events if e.hidden != body.hidden)
+        for e in events:
+            e.hidden = body.hidden
+    elif body.source_name is not None and body.external_ids:
+        source = db.scalar(select(Source).where(Source.name == body.source_name))
+        if source is None:
+            raise HTTPException(
+                status_code=404, detail=f"Source '{body.source_name}' not found"
+            )
+        stmt = select(Event).where(
+            Event.source_id == source.id,
+            Event.external_id.in_(body.external_ids),
+        )
+        events = list(db.scalars(stmt).all())
+        updated = sum(1 for e in events if e.hidden != body.hidden)
+        for e in events:
+            e.hidden = body.hidden
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide either event_ids or (source_name and external_ids)",
+        )
+    db.commit()
+    return {"updated": updated, "hidden": body.hidden}
 
 
 @router.get("/sources", response_model=list[SourceOut])

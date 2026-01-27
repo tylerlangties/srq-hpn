@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -31,6 +31,9 @@ class Event(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="scheduled"
     )  # scheduled|canceled
+    # When True, event is excluded from public API (e.g. not local enough).
+    # Preserved across re-ingestion.
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False)
     # Stable identifier for this event within the source (typically the iCal UID from VEVENT).
     # Used for deduplication: unique(source_id, external_id)
     # NOTE: This is NOT the same as SourceFeed.external_id (which identifies the iCal file/feed)

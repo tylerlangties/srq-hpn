@@ -62,3 +62,11 @@ export type SourceFeedCleanupResult = {
   deleted?: number;
   would_delete?: number;
 };
+
+export type EventSearchOut = {
+  id: number;
+  title: string;
+  source_name: string;
+  hidden: boolean;
+  first_start_utc: string | null;
+};

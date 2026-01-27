@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { apiGet, apiPost } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { apiGet, apiPatch, apiPost } from "@/lib/api";
 import type {
+  EventSearchOut,
   IngestResult,
   SourceFeedCleanupResult,
   SourceOut,
@@ -12,6 +13,20 @@ import type {
 type IngestStatus = "idle" | "loading" | "success" | "error";
 
 type CleanupStatus = "idle" | "loading" | "success" | "error";
+
+function formatFirstStart(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
 
 export default function AdminPage() {
   const [sources, setSources] = useState<SourceOut[] | null>(null);
@@ -28,9 +43,63 @@ export default function AdminPage() {
     useState<SourceFeedCleanupResult | null>(null);
   const [cleanupError, setCleanupError] = useState<string | null>(null);
 
+  const [searchInput, setSearchInput] = useState("");
+  const [searchResults, setSearchResults] = useState<EventSearchOut[] | null>(
+    null
+  );
+  const [searchStatus, setSearchStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [hidingEventId, setHidingEventId] = useState<number | null>(null);
+
   useEffect(() => {
     loadSources();
   }, []);
+
+  const runSearch = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setSearchResults(null);
+      setSearchStatus("idle");
+      return;
+    }
+    setSearchStatus("loading");
+    setSearchError(null);
+    try {
+      const data = await apiGet<EventSearchOut[]>(
+        `/api/admin/events/search?q=${encodeURIComponent(q.trim())}&limit=20`
+      );
+      setSearchResults(data);
+      setSearchStatus("idle");
+    } catch (e) {
+      setSearchError(e instanceof Error ? e.message : String(e));
+      setSearchStatus("error");
+      setSearchResults(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      runSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput, runSearch]);
+
+  async function handleHideUnhide(eventId: number, hidden: boolean) {
+    setHidingEventId(eventId);
+    setSearchError(null);
+    try {
+      await apiPatch<{ event_id: number; hidden: boolean }>(
+        `/api/admin/events/${eventId}`,
+        { hidden }
+      );
+      setSearchResults((prev) =>
+        prev?.map((e) => (e.id === eventId ? { ...e, hidden } : e)) ?? null
+      );
+    } catch (e) {
+      setSearchError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setHidingEventId(null);
+    }
+  }
 
   async function loadSources() {
     try {
@@ -382,6 +451,100 @@ export default function AdminPage() {
               )}
             </div>
           )}
+        </div>
+
+        {/* Hide / unhide event */}
+        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Hide / unhide event
+          </h2>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+            Search by event title or by event ID. Hidden events are excluded from
+            the public events list.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="event-search"
+                className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1"
+              >
+                Search by title or event ID
+              </label>
+              <input
+                id="event-search"
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="e.g. Jazz Night or 12345"
+                className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+              />
+            </div>
+
+            {searchError && (
+              <div className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-3">
+                <p className="text-sm text-red-800 dark:text-red-400">
+                  {searchError}
+                </p>
+              </div>
+            )}
+
+            {searchStatus === "loading" && searchInput.trim() && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Searching…
+              </p>
+            )}
+
+            {searchStatus === "idle" &&
+              searchResults &&
+              searchInput.trim() &&
+              (searchResults.length === 0 ? (
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  No events match &quot;{searchInput.trim()}&quot;
+                </p>
+              ) : (
+                <ul className="space-y-2 max-h-80 overflow-y-auto">
+                  {searchResults.map((ev) => (
+                    <li
+                      key={ev.id}
+                      className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {ev.title}
+                        </span>
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                          #{ev.id} · {ev.source_name}
+                          {ev.first_start_utc
+                            ? ` · ${formatFirstStart(ev.first_start_utc)}`
+                            : ""}
+                        </span>
+                        {ev.hidden && (
+                          <span className="ml-2 inline-flex items-center rounded bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
+                            Hidden
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleHideUnhide(ev.id, !ev.hidden)}
+                        disabled={hidingEventId === ev.id}
+                        className={`shrink-0 rounded-lg border-2 px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          ev.hidden
+                            ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
+                            : "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                        }`}
+                      >
+                        {hidingEventId === ev.id
+                          ? "…"
+                          : ev.hidden
+                            ? "Unhide"
+                            : "Hide"}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+          </div>
         </div>
 
         {/* Links Section */}
