@@ -34,6 +34,34 @@ class ParsedICalEvent:
     start_utc: datetime
     end_utc: datetime | None
     url: str | None
+    categories: list[str]
+
+
+def _normalize_categories(value: Any) -> list[str]:
+    if value is None:
+        return []
+
+    raw_items: list[str]
+    if hasattr(value, "cats"):
+        raw_items = [str(item) for item in value.cats]
+    elif isinstance(value, list | tuple | set):
+        raw_items = [str(item) for item in value]
+    else:
+        raw_items = [str(item) for item in str(value).split(",")]
+
+    seen: set[str] = set()
+    categories: list[str] = []
+    for item in raw_items:
+        cleaned = item.strip()
+        if not cleaned:
+            continue
+        lowered = cleaned.lower()
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        categories.append(cleaned)
+
+    return categories
 
 
 def fetch_ics(url: str) -> bytes:
@@ -101,6 +129,7 @@ def parse_ics(
             summary = str(comp.get("SUMMARY") or "").strip() or "(Untitled)"
             description = str(comp.get("DESCRIPTION") or "").strip() or None
             location = str(comp.get("LOCATION") or "").strip() or None
+            categories = _normalize_categories(comp.get("CATEGORIES"))
 
             dtstart = comp.get("DTSTART")
             dtend = comp.get("DTEND")
@@ -126,6 +155,7 @@ def parse_ics(
                         start_utc=start_utc,
                         end_utc=end_utc,
                         url=url,
+                        categories=categories,
                     )
                 )
             except (ValueError, AttributeError) as e:

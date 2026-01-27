@@ -25,6 +25,7 @@ class EventOccurrence(Base):
     )
 
     location_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    address_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     venue_id: Mapped[int | None] = mapped_column(
         ForeignKey("venues.id", ondelete="SET NULL"),
         nullable=True,

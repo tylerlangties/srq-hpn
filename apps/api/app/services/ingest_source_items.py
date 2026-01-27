@@ -1,17 +1,47 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import UTC, datetime
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.ingestion.ical import fetch_ics, parse_ics
+from app.models.category import Category
+from app.models.event_category import EventCategory
 from app.models.source import Source
 from app.models.source_feed import SourceFeed
 from app.services.ingest_upsert import upsert_event_and_occurrence
 
 logger = logging.getLogger(__name__)
+
+_CATEGORY_SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify_category(value: str) -> str:
+    return _CATEGORY_SLUG_RE.sub("-", value.strip().lower()).strip("-")
+
+
+def _get_or_create_category(db: Session, name: str) -> Category:
+    existing = db.scalar(select(Category).where(Category.name == name))
+    if existing:
+        return existing
+
+    category = Category(name=name, slug=_slugify_category(name))
+    db.add(category)
+    db.flush()
+    return category
+
+
+def _attach_category(db: Session, *, event_id: int, category_id: int) -> None:
+    stmt = (
+        insert(EventCategory)
+        .values(event_id=event_id, category_id=category_id)
+        .on_conflict_do_nothing(constraint="uq_event_category")
+    )
+    db.execute(stmt)
 
 
 def ingest_source_items(
@@ -76,7 +106,7 @@ def ingest_source_items(
             # Note: ev.uid is the iCal event UID, which becomes Event.external_id
             # This is different from item.external_id (which identifies the iCal file/feed)
             for ev in parsed:
-                upsert_event_and_occurrence(
+                event = upsert_event_and_occurrence(
                     db,
                     source=source,
                     external_id=ev.uid,  # iCal event UID -> Event.external_id (for deduplication)
@@ -88,6 +118,9 @@ def ingest_source_items(
                     external_url=ev.url,
                     fallback_external_url=item.page_url,
                 )
+                for category_name in ev.categories:
+                    category = _get_or_create_category(db, category_name)
+                    _attach_category(db, event_id=event.id, category_id=category.id)
                 events_ingested_count += 1
                 ingested += 1
 

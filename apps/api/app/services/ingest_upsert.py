@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from typing import Final
 
@@ -14,6 +15,14 @@ from app.services.venue_resolver import resolve_venue_id
 
 DEFAULT_TIMEZONE: Final[str] = "America/New_York"
 
+NUMBER_RE = re.compile(r"\b\d{1,6}\b")
+STREET_SUFFIX_RE = re.compile(
+    r"\b(St|Street|Ave|Avenue|Blvd|Boulevard|Rd|Road|Dr|Drive|Ln|Lane|Ct|Court|Cir|"
+    r"Circle|Hwy|Highway|Pkwy|Parkway|Way|Pl|Place|Ter|Terrace)\b",
+    re.IGNORECASE,
+)
+COUNTRY_SEGMENTS = {"united states", "usa", "us"}
+
 
 def slugify(value: str) -> str:
     import re
@@ -27,6 +36,39 @@ def _truncate(value: str, max_len: int) -> str:
     if len(value) <= max_len:
         return value
     return value[:max_len].rstrip("-")
+
+
+def _normalize_location(location: str) -> str:
+    return " ".join(location.replace("\n", " ").replace("\r", " ").split())
+
+
+def _extract_address(location: str | None) -> str | None:
+    if not location:
+        return None
+    normalized = _normalize_location(location)
+    segments = [seg.strip() for seg in normalized.split(",") if seg.strip()]
+    if not segments:
+        return None
+
+    start_idx = None
+    for idx, seg in enumerate(segments):
+        if NUMBER_RE.search(seg) and STREET_SUFFIX_RE.search(seg):
+            start_idx = idx
+            break
+
+    if start_idx is None:
+        return None
+
+    address_parts: list[str] = []
+    for seg in segments[start_idx:]:
+        if seg.lower() in COUNTRY_SEGMENTS:
+            break
+        address_parts.append(seg)
+
+    if not address_parts:
+        return None
+
+    return ", ".join(address_parts)
 
 
 def _build_event_slug(*, title: str, source_id: int, external_id: str) -> str:
@@ -133,6 +175,7 @@ def upsert_event_and_occurrence(
 
     # ---- Occurrence upsert (airtight with uniqueness constraint) ----
     resolved_venue_id = resolve_venue_id(db, location)
+    address_text = _extract_address(location)
     occ = _get_occurrence(db, event_id=event.id, start_utc=start_utc)
 
     if occ is None:
@@ -141,6 +184,7 @@ def upsert_event_and_occurrence(
             start_datetime_utc=start_utc,
             end_datetime_utc=end_utc,
             location_text=location,
+            address_text=address_text,
             venue_id=resolved_venue_id,
         )
         db.add(occ)
@@ -155,10 +199,12 @@ def upsert_event_and_occurrence(
             # If it already existed, update it (safe idempotency)
             occ.end_datetime_utc = end_utc
             occ.location_text = location
+            occ.address_text = address_text
             occ.venue_id = resolved_venue_id
     else:
         occ.end_datetime_utc = end_utc
         occ.location_text = location
+        occ.address_text = address_text
         occ.venue_id = resolved_venue_id
 
     return event
