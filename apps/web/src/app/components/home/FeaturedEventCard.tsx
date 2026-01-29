@@ -25,7 +25,7 @@ export default function FeaturedEventCard({ event }: Props) {
       <h2 className="text-2xl font-[var(--font-heading)] font-semibold mb-2 text-charcoal dark:text-white">
         {event.event.title}
       </h2>
-      <p className="text-sm text-muted dark:text-white/60 mb-4">
+      <p className="text-sm text-muted dark:text-white/60 mb-4 line-clamp-5">
         {event.event.description ?? "Live music and coastal vibes to kick off the night."}
       </p>
       <div className="flex items-center justify-between">
