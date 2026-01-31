@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
-import { formatEventTime } from "./event-utils";
+import { formatEventTime, getTimeOfDayLabel, isHappeningNow } from "./event-utils";
 
 type Props = {
   event: EventOccurrenceOut;
@@ -8,6 +8,9 @@ type Props = {
 
 export default function FeaturedEventCard({ event }: Props) {
   const time = formatEventTime(event);
+  const happeningNow = isHappeningNow(event);
+  const startDate = new Date(event.start_datetime_utc);
+  const timeOfDay = getTimeOfDayLabel(startDate);
   const venue = event.venue?.name ?? event.location_text ?? "Location TBA";
   const href = event.event.external_url ?? "/events";
   const isExternal = Boolean(event.event.external_url);
@@ -20,7 +23,7 @@ export default function FeaturedEventCard({ event }: Props) {
       <div className="h-44 rounded-2xl bg-gradient-to-br from-coral via-gulf to-palm mb-5 dark:from-purple-600 dark:via-pink-500 dark:to-orange-400"></div>
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted dark:text-white/50 mb-2">
         <span className="h-2 w-2 rounded-full bg-coral dark:bg-purple-400"></span>
-        Live Tonight · {time}
+        {happeningNow ? "Happening Now" : `${timeOfDay} · ${time}`}
       </div>
       <h2 className="text-2xl font-[var(--font-heading)] font-semibold mb-2 text-charcoal dark:text-white">
         {event.event.title}
