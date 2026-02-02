@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from typing import Any
@@ -11,6 +12,81 @@ import requests
 from icalendar import Calendar  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# iCal Sanitization for Popmenu/Big Top Brewing
+# =============================================================================
+#
+# Problem: Popmenu's iCal export for recurring events outputs malformed data:
+#
+#   1. Invalid DTEND: "DTEND:-47120101T235959"
+#      - This appears to be their placeholder for "no end date"
+#      - Year -4712 is invalid and breaks iCal parsers
+#
+#   2. Empty UNTIL in RRULE: "RRULE:FREQ=WEEKLY;UNTIL=;BYDAY=TH"
+#      - The UNTIL parameter is present but has no value
+#      - This breaks recurring event expansion
+#
+# Impact: The recurring_ical_events library silently returns 0 occurrences
+# when it encounters this malformed data (no exception, just empty results).
+#
+# Solution: Pre-process the iCal bytes to remove/fix these issues before
+# parsing. This allows recurring events to work correctly.
+#
+# Source: Discovered while implementing Big Top Brewing scraper (Jan 2026)
+# =============================================================================
+
+# Matches the bogus DTEND line that Popmenu outputs for recurring events
+# Example: "DTEND:-47120101T235959"
+_BOGUS_DTEND_RE = re.compile(rb"^DTEND:-\d+T\d+\r?\n", re.MULTILINE)
+
+# Matches empty UNTIL= in RRULE (with nothing after the = before ; or newline)
+# Example: "RRULE:FREQ=WEEKLY;UNTIL=;BYDAY=TH" -> "RRULE:FREQ=WEEKLY;BYDAY=TH"
+_EMPTY_UNTIL_RE = re.compile(rb"UNTIL=;")
+
+
+def _sanitize_popmenu_ical(ics_bytes: bytes) -> bytes:
+    """
+    Sanitize malformed iCal data from Popmenu before parsing.
+
+    Fixes two known issues with Popmenu's iCal export:
+    1. Removes invalid DTEND lines with bogus dates (e.g., DTEND:-47120101T235959)
+    2. Removes empty UNTIL= parameters from RRULE lines
+
+    Without this sanitization, recurring events from sources like Big Top Brewing
+    will parse successfully but return 0 occurrences because the
+    recurring_ical_events library can't process the malformed dates.
+
+    Args:
+        ics_bytes: Raw iCal bytes that may contain malformed data
+
+    Returns:
+        Sanitized iCal bytes safe for parsing
+    """
+    original_len = len(ics_bytes)
+    sanitized = ics_bytes
+
+    # Remove bogus DTEND lines (e.g., "DTEND:-47120101T235959")
+    # These break date parsing - better to have no DTEND than an invalid one
+    sanitized = _BOGUS_DTEND_RE.sub(b"", sanitized)
+
+    # Remove empty UNTIL= from RRULE (e.g., "UNTIL=;" -> "")
+    # An empty UNTIL means "forever" - just omit it entirely
+    sanitized = _EMPTY_UNTIL_RE.sub(b"", sanitized)
+
+    if len(sanitized) != original_len:
+        logger.debug(
+            "Sanitized malformed Popmenu iCal data",
+            extra={
+                "original_bytes": original_len,
+                "sanitized_bytes": len(sanitized),
+                "bytes_removed": original_len - len(sanitized),
+            },
+        )
+
+    return sanitized
+
 
 DEFAULT_TZ = ZoneInfo("America/New_York")
 
@@ -122,12 +198,18 @@ def parse_ics(
 
     Expands recurring events (RRULE, RDATE) into individual occurrences
     within the date range from now to `expand_months` in the future.
+
+    Note: Input is sanitized to fix known issues with Popmenu's iCal export
+    (malformed DTEND dates and empty UNTIL parameters in RRULEs).
     """
     logger.debug(
         "Parsing iCal data",
         extra={"bytes_length": len(ics_bytes), "expand_months": expand_months},
     )
     try:
+        # Sanitize malformed iCal data (fixes Popmenu/Big Top recurring events)
+        ics_bytes = _sanitize_popmenu_ical(ics_bytes)
+
         cal = Calendar.from_ical(ics_bytes)
         out: list[ParsedICalEvent] = []
 

@@ -8,7 +8,9 @@ class EventCategory(Base):
     __tablename__ = "event_categories"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), index=True
+    )
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), index=True)
 
     __table_args__ = (

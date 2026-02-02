@@ -18,7 +18,9 @@ class SourceFetchRun(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     source_id: Mapped[int] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"))
-    source: Mapped[Source] = relationship(back_populates="fetch_runs")  # type: ignore[name-defined]
+    source: Mapped[Source] = (
+        relationship()
+    )  # No back_populates - Source doesn't use this
 
     fetch_url: Mapped[str] = mapped_column(Text)
 
