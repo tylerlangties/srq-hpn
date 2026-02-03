@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev:web": "pnpm --filter web dev",
+    "dev:cms": "concurrently -n web,cms \"pnpm --filter web dev\" \"npx decap-server\"",
     "lint:web": "pnpm --filter web lint",
     "dev:api": "bash -lc 'cd apps/api && source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000'",
     "lint:api": "cd apps/api && .venv/bin/python -m ruff check .",
@@ -17,5 +18,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@10.27.0",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }

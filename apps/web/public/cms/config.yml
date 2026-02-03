@@ -1,0 +1,38 @@
+backend:
+  name: git-gateway
+  branch: main
+
+local_backend: true
+
+media_folder: "apps/web/public/uploads"
+public_folder: "/uploads"
+
+collections:
+  - name: "articles"
+    label: "Articles"
+    folder: "apps/web/content/articles"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{title}}"
+    identifier_field: "title"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Excerpt", name: "excerpt", widget: "text" }
+      - { label: "Category", name: "category", widget: "string" }
+      - { label: "Read Time", name: "readTime", widget: "string" }
+      - { label: "Publish Date", name: "date", widget: "datetime" }
+      - { label: "Meta Title", name: "metaTitle", widget: "string", required: false }
+      - {
+          label: "Meta Description",
+          name: "metaDescription",
+          widget: "text",
+          required: false,
+        }
+      - { label: "Cover Image", name: "coverImage", widget: "image", required: false }
+      - {
+          label: "Body",
+          name: "body",
+          widget: "markdown",
+          editor_mode: "raw",
+          hint: "Paste Markdown here. Raw mode avoids rich-text paste issues.",
+        }

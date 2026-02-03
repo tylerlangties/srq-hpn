@@ -1,5 +1,6 @@
 #General
 node_modules
+.pnpm-store
 .env
 .env.local
 mocks
