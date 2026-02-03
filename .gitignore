@@ -12,12 +12,11 @@ __pycache__/
 .ruff_cache
 *.py[cod]
 *.pyo
+scripts/
 
 #MISC
 event_sources.txt
-notes.txt
 improvements.md
-logging.md
 seed.py
 test_ics_urls.py
 test_ical_fetch.py
