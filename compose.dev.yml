@@ -1,0 +1,219 @@
+# Development Docker Compose
+# Usage: docker compose -f compose.dev.yml up
+#
+# Features:
+# - Hot reload for both frontend and backend
+# - Source code mounted as volumes
+# - Database included
+# - Celery for background task processing (scrapers)
+# - Redis as message broker for Celery
+# - Flower for Celery monitoring (http://localhost:5555)
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: srq-hpn-db
+    environment:
+      # Superuser (for migrations and admin tools like Beekeeper)
+      POSTGRES_DB: ${POSTGRES_DB:-srq_hpn}
+      POSTGRES_USER: ${POSTGRES_USER:-srq_hpn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-srq_hpn_dev_password}
+      # Limited app user (for the running API)
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-srq_hpn_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      # Init script creates the limited app user on first startup
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-srq_hpn} -d ${POSTGRES_DB:-srq_hpn}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - srq-network-dev
+
+  # =========================================================================
+  # Redis - Message Broker for Celery
+  # =========================================================================
+  # Redis serves two purposes:
+  # 1. Message broker: Stores tasks waiting to be processed by workers
+  # 2. Result backend: Stores task results for retrieval
+  redis:
+    image: redis:7-alpine
+    container_name: srq-hpn-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      # Persist Redis data (optional for dev, but useful for task result history)
+      - redis_data_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - srq-network-dev
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: srq-hpn-api-dev
+    environment:
+      # Limited user - used by the running API (can only read/write data)
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
+      # Superuser - used only for migrations (can modify schema)
+      DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD:-srq_hpn_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
+      # Redis URL for Celery (allows API to send tasks to workers)
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/api/app:/app/apps/api/app:cached
+      - ./apps/api/alembic:/app/apps/api/alembic:cached
+      - ./apps/api/alembic.ini:/app/apps/api/alembic.ini:cached
+      - ./apps/api/scripts:/app/apps/api/scripts:cached
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - srq-network-dev
+
+  # =========================================================================
+  # Celery Worker - Executes Background Tasks
+  # =========================================================================
+  # Workers pull tasks from the Redis queue and execute them.
+  # You can scale workers horizontally by increasing replicas.
+  celery-worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: srq-hpn-celery-worker
+    # Override the default command to run Celery worker instead of uvicorn
+    command: >
+      celery -A app.celery_app worker
+      --loglevel=INFO
+      --concurrency=2
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
+      DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD:-srq_hpn_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      # Mount source code so task changes are reflected immediately
+      - ./apps/api/app:/app/apps/api/app:cached
+      - ./apps/api/scripts:/app/apps/api/scripts:cached
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - srq-network-dev
+
+  # =========================================================================
+  # Celery Beat - Task Scheduler
+  # =========================================================================
+  # Beat is a scheduler that sends tasks to workers at specified intervals.
+  # It reads the schedule from celery_app.py (beat_schedule configuration).
+  # Only ONE beat instance should run at a time (it's not horizontally scalable).
+  celery-beat:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: srq-hpn-celery-beat
+    # Override the default command to run Celery beat scheduler
+    command: >
+      celery -A app.celery_app beat
+      --loglevel=INFO
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
+      DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD:-srq_hpn_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      # Mount source code so schedule changes are reflected
+      - ./apps/api/app:/app/apps/api/app:cached
+      - ./apps/api/scripts:/app/apps/api/scripts:cached
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - srq-network-dev
+
+  # =========================================================================
+  # Flower - Celery Monitoring Dashboard
+  # =========================================================================
+  # Flower provides a real-time web UI for monitoring Celery tasks.
+  # Access at: http://localhost:5555
+  #
+  # Features:
+  # - View active, pending, and completed tasks
+  # - Monitor worker status and resource usage
+  # - Inspect task arguments and results
+  # - Manually trigger or revoke tasks
+  flower:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: srq-hpn-flower
+    command: >
+      celery -A app.celery_app flower
+      --port=5555
+      --broker=redis://redis:6379/0
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./apps/api/app:/app/apps/api/app:cached
+      - ./apps/api/scripts:/app/apps/api/scripts:cached
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - srq-network-dev
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    container_name: srq-hpn-web-dev
+    environment:
+      # Use Docker service name for server-side API calls
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      # Enable polling for file watching (critical for hot reload in Docker)
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/web/src:/app/apps/web/src:cached
+      - ./apps/web/public:/app/apps/web/public:cached
+      - ./apps/web/content:/app/apps/web/content:cached
+      - ./apps/web/next.config.ts:/app/apps/web/next.config.ts:cached
+      - ./apps/web/tailwind.config.ts:/app/apps/web/tailwind.config.ts:cached
+      - ./apps/web/postcss.config.mjs:/app/apps/web/postcss.config.mjs:cached
+      - ./apps/web/tsconfig.json:/app/apps/web/tsconfig.json:cached
+      # Persist Next.js cache for faster rebuilds
+      - web_next_cache:/app/apps/web/.next
+    depends_on:
+      - api
+    networks:
+      - srq-network-dev
+
+networks:
+  srq-network-dev:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+  web_next_cache:

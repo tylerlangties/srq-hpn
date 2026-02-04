@@ -1,0 +1,31 @@
+# Development Dockerfile for Next.js frontend
+# Optimized for hot reload with Docker volumes
+
+FROM node:22-alpine
+
+RUN corepack enable && corepack prepare pnpm@10.27.0 --activate
+
+WORKDIR /app
+
+# Install dependencies first (cached layer)
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/web/package.json ./apps/web/
+
+RUN pnpm install --frozen-lockfile --filter web
+
+# Source code will be mounted as volume, but we need the base structure
+WORKDIR /app/apps/web
+
+# Environment variables for development
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# CRITICAL: Enable polling for file watching in Docker
+# This fixes the infinite reload bug on non-root pages
+ENV WATCHPACK_POLLING=true
+ENV CHOKIDAR_USEPOLLING=true
+
+EXPOSE 3000
+
+# Use 0.0.0.0 to allow connections from outside the container
+CMD ["pnpm", "dev", "--hostname", "0.0.0.0"]

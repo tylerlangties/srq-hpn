@@ -3,13 +3,19 @@ services:
     image: postgres:16-alpine
     container_name: srq-hpn-db
     environment:
+      # Superuser (for migrations and admin tools like Beekeeper)
       POSTGRES_DB: ${POSTGRES_DB:-srq_hpn}
       POSTGRES_USER: ${POSTGRES_USER:-srq_hpn}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-srq_hpn_dev_password}
+      # Limited app user (for the running API)
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-srq_hpn_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Init script creates the limited app user on first startup
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-srq_hpn} -d ${POSTGRES_DB:-srq_hpn}"]
       interval: 5s

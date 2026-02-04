@@ -1,0 +1,48 @@
+# Root .dockerignore for multi-stage builds
+
+# Git
+.git
+.gitignore
+
+# IDE and editors
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation (except content)
+docs
+*.md
+!apps/web/content/**/*.md
+
+# Development files
+.env.local
+.env*.local
+
+# Node modules at root (app-specific are handled separately)
+node_modules
+
+# Python virtual environments
+.venv
+venv
+__pycache__
+
+# Build artifacts
+.next
+out
+dist
+build
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Testing
+coverage
+.pytest_cache
+.nyc_output

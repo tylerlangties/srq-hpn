@@ -207,6 +207,8 @@ This plan expands your high-level steps into concrete tasks, file touchpoints, a
 
 | **Organizers** | New role and flows: organizer sign-up, create “my venue,” add events (and optionally upload iCal that populates events). Permissions so organizers only edit their own venue/events. |
 
+| **Personalization** | Add frontend error handling, using unique strings for when something breaks OR when there is no data
+
 **Deliverables:** Prioritized backlog and, when you’re ready, implementation tickets for each area.
 
 ---

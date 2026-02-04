@@ -20,9 +20,11 @@ target_metadata = Base.metadata
 
 
 def _get_db_url() -> str:
-    url = os.getenv("DATABASE_URL")
+    # Prefer admin URL for migrations (has schema modification privileges)
+    # Fall back to DATABASE_URL for backward compatibility
+    url = os.getenv("DATABASE_URL_ADMIN") or os.getenv("DATABASE_URL")
     if not url:
-        raise RuntimeError("DATABASE_URL is not set")
+        raise RuntimeError("DATABASE_URL_ADMIN or DATABASE_URL must be set")
     return url
 
 

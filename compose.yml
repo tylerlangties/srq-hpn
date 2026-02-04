@@ -1,0 +1,96 @@
+# Production Docker Compose
+# Usage: docker compose --env-file .env.production up -d
+#
+# Includes Caddy reverse proxy for:
+# - Automatic HTTPS via Let's Encrypt
+# - Routing: /api/* → API, /* → Web
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: srq-hpn-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required (e.g., example.com)}
+    depends_on:
+      - web
+      - api
+    networks:
+      - srq-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: srq-hpn-db
+    environment:
+      # Superuser (for migrations, run separately via CI/CD)
+      POSTGRES_DB: ${POSTGRES_DB:-srq_hpn}
+      POSTGRES_USER: ${POSTGRES_USER:-srq_hpn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      # Limited app user (for the running API)
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-srq_hpn_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Init script creates the limited app user on first startup
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-srq_hpn} -d ${POSTGRES_DB:-srq_hpn}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - srq-network
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: srq-hpn-api
+    environment:
+      # Limited user - used by the running API (can only read/write data)
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
+      # Superuser - used only for migrations (can modify schema)
+      DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
+    # No ports exposed - only accessible via Caddy
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - srq-network
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: srq-hpn-web
+    environment:
+      # In production, API is accessed via the same domain through Caddy
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+    # No ports exposed - only accessible via Caddy
+    expose:
+      - "3000"
+    depends_on:
+      - api
+    networks:
+      - srq-network
+    restart: unless-stopped
+
+networks:
+  srq-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,32 @@
+# Caddyfile - Reverse proxy configuration
+# Caddy automatically handles HTTPS via Let's Encrypt
+
+{$DOMAIN} {
+    # API routes - proxy to FastAPI backend
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+
+    # All other routes - proxy to Next.js frontend
+    handle {
+        reverse_proxy web:3000
+    }
+
+    # Security headers
+    header {
+        # Prevent clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Enable XSS filter
+        X-XSS-Protection "1; mode=block"
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}
