@@ -9,6 +9,7 @@ database.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -37,6 +38,9 @@ BASE_URL = "https://bigwaterslandtrust.org"
 EVENTS_API_URL = f"{BASE_URL}/wp-json/wp/v2/event"
 
 EASTERN_TZ = ZoneInfo("America/New_York")
+
+# Matches closure / non-event titles like "PARK CLOSED Public Holiday"
+SKIP_TITLE_RE = re.compile(r"\bpark\s+closed\b", re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
@@ -326,6 +330,7 @@ def run_collector(
         "events_discovered": 0,
         "events_collected": 0,
         "events_failed": 0,
+        "events_skipped_closed": 0,
         "events_skipped_past": 0,
         "occurrences_upserted": 0,
         "errors": 0,
@@ -352,6 +357,15 @@ def run_collector(
             if not event_url:
                 stats["events_failed"] += 1
                 logger.warning("Missing event URL", extra={"event_id": event.get("id")})
+                continue
+
+            raw_title = clean_text(event.get("title", {}).get("rendered")) or ""
+            if SKIP_TITLE_RE.search(raw_title):
+                stats["events_skipped_closed"] += 1
+                logger.info(
+                    "Skipping closure event",
+                    extra={"event_id": event.get("id"), "title": raw_title},
+                )
                 continue
 
             detail = collect_event_detail(session, event_url)
