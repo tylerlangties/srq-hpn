@@ -44,11 +44,11 @@ services:
   redis:
     image: redis:7-alpine
     container_name: srq-hpn-redis
+    # Disable persistence to avoid memory overcommit warning in dev
+    # --save "" disables RDB snapshots, --appendonly no disables AOF
+    command: redis-server --save "" --appendonly no
     ports:
       - "6379:6379"
-    volumes:
-      # Persist Redis data (optional for dev, but useful for task result history)
-      - redis_data_dev:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -104,6 +104,8 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
       DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD:-srq_hpn_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
       REDIS_URL: redis://redis:6379/0
+      # Ensure scripts package is importable from tasks
+      PYTHONPATH: /app/apps/api
     volumes:
       # Mount source code so task changes are reflected immediately
       - ./apps/api/app:/app/apps/api/app:cached
@@ -135,6 +137,8 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
       DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD:-srq_hpn_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
       REDIS_URL: redis://redis:6379/0
+      # Ensure scripts package is importable from tasks
+      PYTHONPATH: /app/apps/api
     volumes:
       # Mount source code so schedule changes are reflected
       - ./apps/api/app:/app/apps/api/app:cached
@@ -163,12 +167,17 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     container_name: srq-hpn-flower
+    # Wait for worker to be ready before starting Flower
+    # This avoids "Inspect method failed" warnings at startup
     command: >
-      celery -A app.celery_app flower
-      --port=5555
-      --broker=redis://redis:6379/0
+      sh -c "chmod +x scripts/wait-for-worker.sh &&
+      scripts/wait-for-worker.sh celery -A app.celery_app flower --port=5555"
     environment:
       REDIS_URL: redis://redis:6379/0
+      # DATABASE_URL is needed because the Celery app imports tasks which import db
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
+      # Allow unauthenticated API access in development (do NOT use in production)
+      FLOWER_UNAUTHENTICATED_API: "true"
     ports:
       - "5555:5555"
     volumes:
@@ -215,5 +224,4 @@ networks:
 
 volumes:
   postgres_data_dev:
-  redis_data_dev:
   web_next_cache:

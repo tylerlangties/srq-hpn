@@ -43,7 +43,7 @@ app.conf.update(
     timezone="America/New_York",  # Use Eastern time for scheduling
     enable_utc=True,  # Store times in UTC internally
     # Result settings
-    result_expires=3600,  # Results expire after 1 hour (in seconds)
+    result_expires=604800,  # Results expire after 7 days (in seconds)
     # Task execution settings
     task_acks_late=True,  # Acknowledge task after it completes (not when received)
     task_reject_on_worker_lost=True,  # Requeue task if worker dies unexpectedly

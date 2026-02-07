@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user for security (avoids Celery warning about running as root)
+RUN groupadd --gid 1000 appgroup && \
+    useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
+
 # Create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -18,8 +22,14 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY apps/api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Set ownership of venv to appuser
+RUN chown -R appuser:appgroup /opt/venv
+
 # Application code will be mounted as volume
 WORKDIR /app/apps/api
+
+# Switch to non-root user
+USER appuser
 
 EXPOSE 8000
 

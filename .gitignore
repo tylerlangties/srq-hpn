@@ -12,7 +12,9 @@ __pycache__/
 .ruff_cache
 *.py[cod]
 *.pyo
-scripts/
+
+# Collector dry-run test data
+apps/api/app/collectors/test_data/*.json
 
 #MISC
 event_sources.txt

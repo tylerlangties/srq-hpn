@@ -23,8 +23,16 @@
     "docker:logs": "docker compose -f compose.dev.yml logs -f",
     "docker:logs:web": "docker logs -f srq-hpn-web-dev",
     "docker:logs:api": "docker logs -f srq-hpn-api-dev",
+    "docker:logs:celery": "docker compose -f compose.dev.yml logs -f celery-worker celery-beat",
+    "docker:logs:worker": "docker logs -f srq-hpn-celery-worker",
+    "docker:logs:beat": "docker logs -f srq-hpn-celery-beat",
+    "docker:logs:flower": "docker logs -f srq-hpn-flower",
     "docker:migrate": "docker exec srq-hpn-api-dev alembic upgrade head",
-    "docker:migrate:prod": "docker exec srq-hpn-api alembic upgrade head"
+    "docker:migrate:prod": "docker exec srq-hpn-api alembic upgrade head",
+    "celery:health": "docker exec srq-hpn-celery-worker celery -A app.celery_app call app.tasks.health_check",
+    "celery:tasks": "docker exec srq-hpn-celery-worker celery -A app.celery_app inspect registered",
+    "celery:active": "docker exec srq-hpn-celery-worker celery -A app.celery_app inspect active",
+    "celery:purge": "docker exec srq-hpn-celery-worker celery -A app.celery_app purge -f"
   },
   "keywords": [],
   "author": "",

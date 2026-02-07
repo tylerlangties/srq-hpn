@@ -5,27 +5,27 @@ This module contains all Celery tasks that can be executed by workers.
 Tasks are decorated with @app.task to register them with Celery.
 
 Task Types in this project:
-1. Direct scrapers: Scrape websites and ingest events directly (e.g., Van Wezel)
-2. Source feed scrapers: Discover iCal URLs and store them for later ingestion (e.g., Mote)
+1. Direct collectors: Collect events from websites and ingest directly (e.g., Van Wezel)
+2. Source feed collectors: Discover iCal URLs and store them for later ingestion (e.g., Mote)
 3. Ingestion tasks: Process source feeds and ingest events from iCal files
 
 Each task:
 - Runs in its own database session (isolated transactions)
 - Has retry logic for transient failures
 - Logs progress for monitoring
+
+Note: The actual collection logic lives in app/collectors/. These tasks are thin
+wrappers that provide Celery integration (retries, scheduling, result tracking).
 """
 
 from __future__ import annotations
 
 import logging
-import time
 from datetime import UTC, datetime
 from typing import Any
 
 import requests
-from requests.adapters import HTTPAdapter
 from sqlalchemy import select
-from urllib3.util.retry import Retry
 
 from app.celery_app import app
 from app.db import SessionLocal
@@ -36,41 +36,8 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
-# Helper Functions
-# =============================================================================
-
-
-def get_http_session() -> requests.Session:
-    """Create an HTTP session with retry logic."""
-    session = requests.Session()
-    session.headers.update(
-        {
-            "User-Agent": (
-                "Mozilla/5.0 (X11; Linux x86_64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/121.0.0.0 Safari/537.36"
-            ),
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-        }
-    )
-
-    retry_strategy = Retry(
-        total=3,
-        backoff_factor=1,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["HEAD", "GET"],
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-
-    return session
-
-
-# =============================================================================
-# Direct Scraper Tasks
-# These scrapers fetch data and ingest it directly into the database
+# Direct Collector Tasks
+# These collectors fetch data and ingest it directly into the database
 # =============================================================================
 
 
@@ -80,14 +47,14 @@ def get_http_session() -> requests.Session:
     default_retry_delay=60,  # Wait 60 seconds between retries
     autoretry_for=(requests.RequestException,),  # Auto-retry on network errors
 )
-def scrape_vanwezel(self, source_id: int, delay: float = 0.5) -> dict[str, Any]:
+def collect_vanwezel(self, source_id: int, delay: float = 0.5) -> dict[str, Any]:
     """
-    Scrape Van Wezel Performing Arts Hall events.
+    Collect Van Wezel Performing Arts Hall events.
 
-    This is a "direct" scraper that:
+    This is a "direct" collector that:
     1. Fetches the events listing page
     2. Extracts event URLs
-    3. Scrapes each event detail page
+    3. Collects each event detail page
     4. Ingests events directly into the database
 
     Args:
@@ -95,99 +62,33 @@ def scrape_vanwezel(self, source_id: int, delay: float = 0.5) -> dict[str, Any]:
         delay: Seconds to wait between requests (be respectful to the server)
 
     Returns:
-        Dictionary with scraping statistics
+        Dictionary with collection statistics
     """
-    # Import here to avoid circular imports
-    # Note: scripts/ is a sibling directory to app/, so we import from scripts.*
-    from scripts.scrape_vanwezel import (
-        EVENTS_URL,
-        extract_event_links,
-        fetch_html,
-        ingest_event,
-        scrape_event_detail,
-    )
+    from app.collectors.vanwezel import run_collector
 
     logger.info(
-        "Starting Van Wezel scraper task",
+        "Starting Van Wezel collector task",
         extra={"source_id": source_id, "task_id": self.request.id},
     )
 
-    stats = {
-        "task_id": self.request.id,
-        "source_id": source_id,
-        "started_at": datetime.now(UTC).isoformat(),
-        "events_discovered": 0,
-        "events_scraped": 0,
-        "events_failed": 0,
-        "occurrences_created": 0,
-        "errors": 0,
-    }
-
     db = SessionLocal()
-    session = get_http_session()
-
     try:
         source = db.get(Source, source_id)
         if not source:
             raise ValueError(f"Source {source_id} not found")
 
-        # Fetch event listing
-        html = fetch_html(session, EVENTS_URL)
-        event_links = extract_event_links(html)
-        stats["events_discovered"] = len(event_links)
+        stats = run_collector(db, source, delay=delay)
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
 
-        # Deduplicate by URL
-        seen_urls: set[str] = set()
-        unique_events = []
-        for event_link in event_links:
-            if event_link["url"] not in seen_urls:
-                seen_urls.add(event_link["url"])
-                unique_events.append(event_link)
-
-        # Scrape each event
-        for event_link in unique_events:
-            try:
-                event = scrape_event_detail(session, event_link["url"])
-                if event:
-                    stats["events_scraped"] += 1
-                    occurrences = ingest_event(db, source=source, event=event)
-                    stats["occurrences_created"] += occurrences
-                else:
-                    stats["events_failed"] += 1
-
-                time.sleep(delay)
-
-            except Exception as e:
-                stats["errors"] += 1
-                stats["events_failed"] += 1
-                logger.error(
-                    "Failed to scrape event",
-                    extra={
-                        "url": event_link["url"],
-                        "error_type": type(e).__name__,
-                        "error": str(e),
-                    },
-                    exc_info=True,
-                )
-
-        db.commit()
-        stats["completed_at"] = datetime.now(UTC).isoformat()
-        stats["status"] = "success"
-
-        logger.info(
-            "Van Wezel scraper task completed",
-            extra=stats,
-        )
-
+        logger.info("Van Wezel collector task completed", extra=stats)
         return stats
 
     except Exception as e:
         db.rollback()
-        stats["status"] = "error"
-        stats["error"] = f"{type(e).__name__}: {e}"
         logger.error(
-            "Van Wezel scraper task failed",
-            extra=stats,
+            "Van Wezel collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -202,13 +103,13 @@ def scrape_vanwezel(self, source_id: int, delay: float = 0.5) -> dict[str, Any]:
     default_retry_delay=60,
     autoretry_for=(requests.RequestException,),
 )
-def scrape_mote(
+def collect_mote(
     self, source_id: int, months_ahead: int = 2, validate_ical: bool = False
 ) -> dict[str, Any]:
     """
-    Scrape Mote Marine monthly iCal feeds.
+    Collect Mote Marine monthly iCal feeds.
 
-    This is a "source feed" scraper that:
+    This is a "source feed" collector that:
     1. Generates iCal URLs for current and future months
     2. Stores these URLs in the source_feeds table
     3. The feeds are later ingested by ingest_source_items()
@@ -219,89 +120,35 @@ def scrape_mote(
         validate_ical: Whether to validate iCal URLs are accessible
 
     Returns:
-        Dictionary with scraping statistics
+        Dictionary with collection statistics
     """
-    # Import here to avoid circular imports
-    # Note: scripts/ is a sibling directory to app/, so we import from scripts.*
-    from scripts.scrape_mote import (
-        generate_month_entries,
-        upsert_item,
-        validate_ical_url,
-    )
+    from app.collectors.mote import run_collector
 
     logger.info(
-        "Starting Mote Marine scraper task",
-        extra={
-            "source_id": source_id,
-            "months_ahead": months_ahead,
-            "task_id": self.request.id,
-        },
+        "Starting Mote Marine collector task",
+        extra={"source_id": source_id, "task_id": self.request.id},
     )
 
-    stats = {
-        "task_id": self.request.id,
-        "source_id": source_id,
-        "started_at": datetime.now(UTC).isoformat(),
-        "feeds_considered": 0,
-        "feeds_upserted": 0,
-        "ical_validated": 0,
-        "ical_invalid": 0,
-        "errors": 0,
-    }
-
     db = SessionLocal()
-    session = get_http_session()
-
     try:
         source = db.get(Source, source_id)
         if not source:
             raise ValueError(f"Source {source_id} not found")
 
-        entries = generate_month_entries(months_ahead=months_ahead)
-
-        for entry in entries:
-            stats["feeds_considered"] += 1
-            try:
-                if validate_ical:
-                    if validate_ical_url(entry.ical_url, session):
-                        stats["ical_validated"] += 1
-                    else:
-                        stats["ical_invalid"] += 1
-                        continue
-
-                upsert_item(db, source_id=source.id, entry=entry)
-                stats["feeds_upserted"] += 1
-
-            except Exception as e:
-                stats["errors"] += 1
-                logger.error(
-                    "Error upserting month entry",
-                    extra={
-                        "source_id": source.id,
-                        "year_month": entry.year_month,
-                        "error_type": type(e).__name__,
-                    },
-                    exc_info=True,
-                )
-
-        db.commit()
-        stats["completed_at"] = datetime.now(UTC).isoformat()
-        stats["status"] = "success"
-
-        logger.info(
-            "Mote Marine scraper task completed",
-            extra=stats,
+        stats = run_collector(
+            db, source, months_ahead=months_ahead, validate_ical=validate_ical
         )
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
 
+        logger.info("Mote Marine collector task completed", extra=stats)
         return stats
 
     except Exception as e:
         db.rollback()
-        stats["status"] = "error"
-        stats["error"] = f"{type(e).__name__}: {e}"
         logger.error(
-            "Mote Marine scraper task failed",
-            extra=stats,
+            "Mote Marine collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
             exc_info=True,
         )
         raise
