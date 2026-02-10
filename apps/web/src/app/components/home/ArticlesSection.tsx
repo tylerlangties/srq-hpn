@@ -90,18 +90,18 @@ export default function ArticlesSection({ showHeader = true, limit }: Props) {
             ? Array.from({ length: placeholderCount }).map((_, index) => (
                 <div
                   key={`article-skeleton-${index}`}
-                  className="h-64 rounded-2xl bg-white/80 border border-white/60 shadow-lg shadow-charcoal/5 animate-pulse dark:bg-white/5 dark:border-white/10"
+                  className="h-80 rounded-2xl border border-white/60 bg-white/80 shadow-lg shadow-charcoal/5 animate-pulse dark:border-white/10 dark:bg-white/5"
                 />
               ))
             : articles.map((article) => (
                 <Link
                   key={article.slug}
                   href={`/articles/${article.slug}`}
-                  className="block"
+                  className="block h-full"
                 >
-                  <article className="group rounded-2xl bg-white/80 border border-white/60 overflow-hidden shadow-lg shadow-charcoal/5 hover:shadow-xl hover:translate-y-[-2px] transition-all cursor-pointer dark:bg-white/5 dark:border-white/10 dark:hover:border-white/20 dark:hover:shadow-purple-500/5">
+                  <article className="group flex h-full min-h-80 cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/80 shadow-lg shadow-charcoal/5 transition-all hover:translate-y-[-2px] hover:shadow-xl dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:shadow-purple-500/5">
                     <div
-                      className="h-40 w-full"
+                      className="h-36 w-full"
                       style={
                         article.coverImage
                           ? {
@@ -112,9 +112,9 @@ export default function ArticlesSection({ showHeader = true, limit }: Props) {
                           : { background: fallbackGradient }
                       }
                     />
-                    <div className="p-5">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="rounded-full bg-sand px-3 py-1 text-xs font-semibold text-charcoal dark:bg-white/10 dark:text-white">
+                    <div className="flex flex-1 flex-col gap-2 p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="max-w-[11rem] truncate rounded-full bg-sand px-3 py-1 text-xs font-semibold text-charcoal dark:bg-white/10 dark:text-white">
                           {article.category}
                         </span>
                         {article.readTime ? (
@@ -123,10 +123,10 @@ export default function ArticlesSection({ showHeader = true, limit }: Props) {
                           </span>
                         ) : null}
                       </div>
-                      <h3 className="font-semibold text-charcoal mb-2 group-hover:text-coral transition leading-snug dark:text-white dark:group-hover:text-purple-300">
+                      <h3 className="line-clamp-2 font-semibold leading-snug text-charcoal transition group-hover:text-coral dark:text-white dark:group-hover:text-purple-300">
                         {article.title}
                       </h3>
-                      <p className="text-sm text-muted dark:text-white/50 line-clamp-2">
+                      <p className="text-sm text-muted line-clamp-3 dark:text-white/50">
                         {article.excerpt}
                       </p>
                     </div>

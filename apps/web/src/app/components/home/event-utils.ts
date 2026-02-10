@@ -30,6 +30,21 @@ export function formatDayLabel(occ: EventOccurrenceOut): string {
   });
 }
 
+export function getEventVenueLabel(occ: EventOccurrenceOut): string {
+  return occ.venue?.name ?? occ.location_text ?? "Location TBA";
+}
+
+export function getEventAreaLabel(occ: EventOccurrenceOut): string {
+  return occ.venue?.area ?? "Sarasota";
+}
+
+export function getEventPriceLabel(occ: EventOccurrenceOut): string {
+  if (occ.event.is_free) {
+    return "Free";
+  }
+  return occ.event.price_text ?? "Event";
+}
+
 /** Returns a time-of-day label (This Morning / Afternoon / Evening / Tonight) from a start date. */
 export function getTimeOfDayLabel(startDate: Date): "This Morning" | "This Afternoon" | "This Evening" | "Tonight" {
   const hour = startDate.getHours();
