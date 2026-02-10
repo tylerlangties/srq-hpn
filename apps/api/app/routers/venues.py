@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_db
+from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.models.venue import Venue
 from app.schemas.events import EventOccurrenceOut, VenueDetailOut, VenueOut
@@ -91,7 +92,7 @@ def events_for_venue(
         .where(EventOccurrence.start_datetime_utc >= start_utc)
         .where(EventOccurrence.start_datetime_utc < end_utc)
         .options(
-            selectinload(EventOccurrence.event),
+            selectinload(EventOccurrence.event).selectinload(Event.categories),
             selectinload(EventOccurrence.venue),
         )
         .order_by(EventOccurrence.start_datetime_utc.asc())

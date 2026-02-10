@@ -1,17 +1,29 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
 if TYPE_CHECKING:
+    from app.models.category import Category
     from app.models.event_occurrence import EventOccurrence
 
 
 class Event(Base):
     __tablename__ = "events"
+    __table_args__ = (
+        # Partial unique index: prevents duplicate (source_id, external_id)
+        # pairs while allowing multiple rows where external_id IS NULL.
+        Index(
+            "uq_events_source_external_id",
+            "source_id",
+            "external_id",
+            unique=True,
+            postgresql_where=text("external_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
@@ -35,7 +47,8 @@ class Event(Base):
     # Preserved across re-ingestion.
     hidden: Mapped[bool] = mapped_column(Boolean, default=False)
     # Stable identifier for this event within the source (typically the iCal UID from VEVENT).
-    # Used for deduplication: unique(source_id, external_id)
+    # Used for deduplication: unique(source_id, external_id) — enforced by
+    # the partial unique index uq_events_source_external_id.
     # NOTE: This is NOT the same as SourceFeed.external_id (which identifies the iCal file/feed)
     external_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, index=True
@@ -49,4 +62,8 @@ class Event(Base):
     # venue: Mapped["Venue"] = relationship(back_populates="events")
     occurrences: Mapped[list["EventOccurrence"]] = relationship(
         back_populates="event", cascade="all, delete-orphan"
+    )
+    categories: Mapped[list["Category"]] = relationship(
+        secondary="event_categories",
+        back_populates="events",
     )

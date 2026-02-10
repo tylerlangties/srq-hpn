@@ -11,6 +11,11 @@ from sqlalchemy.orm import Session
 from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.models.source import Source
+from app.services.categorize import (
+    apply_categories,
+    filter_known_categories,
+    infer_categories,
+)
 from app.services.venue_resolver import resolve_venue_id
 
 DEFAULT_TIMEZONE: Final[str] = "America/New_York"
@@ -113,9 +118,10 @@ def upsert_event_and_occurrence(
     end_utc: datetime | None,
     external_url: str | None,
     fallback_external_url: str | None,
+    categories: list[str] | None = None,
 ) -> Event:
     """
-    Generic iCal upsert:
+    Generic event upsert:
       - Events dedupe: unique(source_id, external_id)
         * external_id should be the iCal event UID (from VEVENT.UID)
         * This is different from SourceFeed.external_id (which identifies the iCal file)
@@ -123,6 +129,11 @@ def upsert_event_and_occurrence(
 
     Stores raw LOCATION into EventOccurrence.location_text.
     Attempts deterministic venue match -> EventOccurrence.venue_id.
+
+    Categories are applied from three sources (all merged, all idempotent):
+      1. *categories* – explicit names passed by the caller
+      2. ``source.default_categories`` – blanket categories for this source
+      3. Keyword inference on *title* / *description*
     """
 
     if start_utc.tzinfo is None:
@@ -206,5 +217,28 @@ def upsert_event_and_occurrence(
         occ.location_text = location
         occ.address_text = address_text
         occ.venue_id = resolved_venue_id
+
+    # ---- Category assignment (idempotent – safe to call on every occurrence) ----
+    all_categories: set[str] = set()
+
+    # 1. Explicit categories from the caller (filtered to known registry)
+    if categories:
+        all_categories.update(filter_known_categories(categories))
+
+    # 2. Blanket categories from the source (filtered to known registry)
+    if source.default_categories:
+        all_categories.update(
+            filter_known_categories(
+                cat.strip()
+                for cat in source.default_categories.split(",")
+                if cat.strip()
+            )
+        )
+
+    # 3. Keyword-inferred categories from title + description
+    all_categories.update(infer_categories(title, description))
+
+    if all_categories:
+        apply_categories(db, event.id, all_categories)
 
     return event

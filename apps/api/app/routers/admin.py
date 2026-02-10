@@ -55,6 +55,13 @@ class EventHiddenUpdate(BaseModel):
     )
 
 
+class DuplicateGroupOut(BaseModel):
+    title_norm: str
+    start_utc: datetime
+    occurrences: int
+    event_ids: list[int]
+
+
 class HideBulkRequest(BaseModel):
     event_ids: list[int] | None = Field(
         None, description="Event IDs to hide/unhide (takes precedence if set)"
@@ -232,6 +239,44 @@ def cleanup_source_feeds(
         },
     )
     return {"deleted": deleted}
+
+
+@router.get("/events/duplicates", response_model=list[DuplicateGroupOut])
+def list_event_duplicates(
+    source_id: int = Query(..., ge=1, description="Source ID to scan"),
+    limit: int = Query(50, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[DuplicateGroupOut]:
+    """
+    List duplicate event occurrences by normalized title + start time.
+    Useful for previewing dedupe candidates.
+    """
+    title_norm = func.regexp_replace(func.lower(Event.title), r"\s+", " ", "g").label(
+        "title_norm"
+    )
+    start_utc = EventOccurrence.start_datetime_utc.label("start_utc")
+    occurrences = func.count(EventOccurrence.id).label("occurrences")
+    event_ids = func.array_agg(func.distinct(Event.id)).label("event_ids")
+
+    stmt = (
+        select(title_norm, start_utc, occurrences, event_ids)
+        .join(EventOccurrence, EventOccurrence.event_id == Event.id)
+        .where(Event.source_id == source_id)
+        .group_by(title_norm, start_utc)
+        .having(func.count(EventOccurrence.id) > 1)
+        .order_by(occurrences.desc(), start_utc.desc())
+        .limit(limit)
+    )
+    rows = db.execute(stmt).all()
+    return [
+        DuplicateGroupOut(
+            title_norm=r.title_norm,
+            start_utc=r.start_utc,
+            occurrences=r.occurrences,
+            event_ids=list(r.event_ids or []),
+        )
+        for r in rows
+    ]
 
 
 @router.post("/ingest/source/{source_id}")

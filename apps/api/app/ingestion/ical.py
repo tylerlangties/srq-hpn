@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import logging
+import random
 import re
+import time
 from dataclasses import dataclass
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
+from datetime import time as dt_time
 from typing import Any
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import recurring_ical_events  # type: ignore[import-untyped]
@@ -144,26 +148,219 @@ def _normalize_categories(value: Any) -> list[str]:
     return categories
 
 
-def fetch_ics(url: str) -> bytes:
-    """Fetch iCal data from a URL."""
-    logger.debug("Fetching iCal data", extra={"url": url})
+# ---------------------------------------------------------------------------
+# Cloudflare challenge detection
+# ---------------------------------------------------------------------------
+
+
+class CloudflareChallengeError(Exception):
+    """Raised when Cloudflare serves a challenge page instead of iCal data."""
+
+
+def _is_cloudflare_challenge(resp: requests.Response) -> bool:
+    """Return *True* if *resp* looks like a Cloudflare challenge page."""
+    # CF challenges that come back as non-200 (403, 503)
+    if resp.headers.get("cf-mitigated") == "challenge":
+        return True
+
+    content_type = resp.headers.get("Content-Type", "")
+    if "text/html" not in content_type:
+        return False
+
+    body = resp.text[:2000].lower()
+    cf_signals = [
+        "cloudflare",
+        "cf-browser-verification",
+        "challenge-platform",
+        "just a moment",
+        "cf_chl_opt",
+        "cf-ray",
+    ]
+    return any(signal in body for signal in cf_signals)
+
+
+def _validate_ical_content(content: bytes) -> bool:
+    """Return *True* if *content* looks like valid iCal data."""
+    stripped = content.lstrip(b"\xef\xbb\xbf").strip()
+    return stripped.startswith(b"BEGIN:VCALENDAR")
+
+
+# ---------------------------------------------------------------------------
+# Session helpers
+# ---------------------------------------------------------------------------
+
+
+def create_ical_session() -> requests.Session:
+    """Create an HTTP session configured for iCal fetching.
+
+    Returns a :class:`requests.Session` with browser-like headers.
+    Re-using a single session across multiple :func:`fetch_ics` calls
+    preserves cookies (including Cloudflare ``__cf_bm`` / ``cf_clearance``)
+    and lowers the chance of being challenged.
+    """
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    return s
+
+
+def warm_session(session: requests.Session, ical_url: str) -> None:
+    """Visit the base domain to pre-establish Cloudflare cookies.
+
+    Call this once before a batch of :func:`fetch_ics` calls that target
+    the same domain.  The GET to the root page picks up ``__cf_bm`` /
+    ``cf_clearance`` cookies that subsequent ``.ics`` requests can reuse.
+    """
+    parsed = urlparse(ical_url)
+    base_url = f"{parsed.scheme}://{parsed.netloc}"
     try:
-        s = requests.Session()
-        s.headers.update(HEADERS)
-        resp = s.get(url, timeout=25, allow_redirects=True)
-        resp.raise_for_status()
+        logger.debug("Warming session", extra={"base_url": base_url})
+        resp = session.get(base_url, timeout=15)
         logger.debug(
-            "Successfully fetched iCal data",
-            extra={"url": url, "content_length": len(resp.content)},
+            "Session warmed",
+            extra={
+                "base_url": base_url,
+                "status_code": resp.status_code,
+                "cookies": list(session.cookies.keys()),
+            },
         )
-        return resp.content
     except requests.RequestException as e:
-        logger.error(
-            "Failed to fetch iCal data",
-            extra={"url": url, "error_type": type(e).__name__},
-            exc_info=True,
+        logger.debug(
+            "Session warmup failed (non-fatal)",
+            extra={"base_url": base_url, "error": str(e)},
         )
-        raise
+
+
+# ---------------------------------------------------------------------------
+# iCal fetching
+# ---------------------------------------------------------------------------
+
+
+def fetch_ics(
+    url: str,
+    *,
+    session: requests.Session | None = None,
+    max_retries: int = 3,
+    base_delay: float = 2.0,
+) -> bytes:
+    """Fetch iCal data from a URL.
+
+    Includes Cloudflare challenge detection and retry with exponential
+    backoff.  When a challenge page is detected instead of iCal data the
+    request is retried up to *max_retries* times with increasing delays
+    (``base_delay * 2^attempt``, plus jitter).
+
+    Args:
+        url: The iCal URL to fetch.
+        session: Optional :class:`requests.Session` to reuse for cookie
+            persistence across multiple fetches.  If *None* a throwaway
+            session is created (old behaviour).
+        max_retries: Maximum number of retries on Cloudflare challenges.
+        base_delay: Base delay in seconds for exponential backoff.
+
+    Returns:
+        Raw iCal bytes.
+
+    Raises:
+        CloudflareChallengeError: If all retries are exhausted due to
+            Cloudflare challenges.
+        ValueError: If the response is not valid iCal data (and is not a
+            recognisable Cloudflare page either).
+        requests.RequestException: For non-Cloudflare HTTP errors.
+    """
+    s = session or create_ical_session()
+    logger.debug("Fetching iCal data", extra={"url": url})
+
+    last_cf_error: CloudflareChallengeError | None = None
+
+    for attempt in range(1 + max_retries):
+        try:
+            resp = s.get(url, timeout=25, allow_redirects=True)
+
+            # --- Cloudflare challenge (may be 200, 403, or 503) ----------
+            if _is_cloudflare_challenge(resp):
+                delay = base_delay * (2**attempt) + random.uniform(0, 1)
+                last_cf_error = CloudflareChallengeError(
+                    f"Cloudflare challenge on attempt {attempt + 1} for {url}"
+                )
+                logger.warning(
+                    "Cloudflare challenge detected",
+                    extra={
+                        "url": url,
+                        "attempt": attempt + 1,
+                        "max_attempts": 1 + max_retries,
+                        "status_code": resp.status_code,
+                        "retry_delay": round(delay, 1),
+                        "cf_ray": resp.headers.get("cf-ray"),
+                    },
+                )
+                if attempt < max_retries:
+                    time.sleep(delay)
+                    continue
+                raise last_cf_error
+
+            resp.raise_for_status()
+
+            # --- Content validation --------------------------------------
+            if not _validate_ical_content(resp.content):
+                logger.warning(
+                    "Response is not valid iCal data",
+                    extra={
+                        "url": url,
+                        "content_type": resp.headers.get("Content-Type"),
+                        "content_preview": resp.content[:200].decode(
+                            "utf-8", errors="replace"
+                        ),
+                    },
+                )
+                raise ValueError(
+                    f"Expected iCal data but got unexpected content from {url}"
+                )
+
+            logger.debug(
+                "Successfully fetched iCal data",
+                extra={"url": url, "content_length": len(resp.content)},
+            )
+            return resp.content
+
+        except (CloudflareChallengeError, ValueError):
+            raise
+        except requests.RequestException as e:
+            # A non-200 response that is also a CF challenge
+            if (
+                hasattr(e, "response")
+                and e.response is not None
+                and _is_cloudflare_challenge(e.response)
+            ):
+                delay = base_delay * (2**attempt) + random.uniform(0, 1)
+                last_cf_error = CloudflareChallengeError(
+                    f"Cloudflare challenge (HTTP {e.response.status_code}) "
+                    f"on attempt {attempt + 1} for {url}"
+                )
+                logger.warning(
+                    "Cloudflare challenge detected (HTTP error)",
+                    extra={
+                        "url": url,
+                        "attempt": attempt + 1,
+                        "max_attempts": 1 + max_retries,
+                        "status_code": e.response.status_code,
+                        "retry_delay": round(delay, 1),
+                    },
+                )
+                if attempt < max_retries:
+                    time.sleep(delay)
+                    continue
+                raise last_cf_error from e
+
+            # Genuine HTTP error – don't retry
+            logger.error(
+                "Failed to fetch iCal data",
+                extra={"url": url, "error_type": type(e).__name__},
+                exc_info=True,
+            )
+            raise
+
+    # Should not be reached, but satisfies the type checker
+    raise last_cf_error or RuntimeError(f"Failed to fetch {url}")
 
 
 def _dt_to_utc(value: Any, *, default_tz: ZoneInfo) -> datetime:
@@ -178,7 +375,7 @@ def _dt_to_utc(value: Any, *, default_tz: ZoneInfo) -> datetime:
 
     # date-only all-day
     if hasattr(value, "year") and not hasattr(value, "hour"):
-        local = datetime.combine(value, time(0, 0), tzinfo=default_tz)
+        local = datetime.combine(value, dt_time(0, 0), tzinfo=default_tz)
         return local.astimezone(UTC)
 
     dt: datetime = value

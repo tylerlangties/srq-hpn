@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class VenueOut(BaseModel):
@@ -24,6 +24,14 @@ class VenueDetailOut(BaseModel):
     timezone: str | None = None
 
 
+class CategoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+
+
 class EventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,6 +43,7 @@ class EventOut(BaseModel):
     price_text: str | None = None
     external_url: str | None = None
     status: str
+    categories: list[CategoryOut] = Field(default_factory=list)
 
 
 class EventOccurrenceOut(BaseModel):

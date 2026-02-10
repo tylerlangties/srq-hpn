@@ -15,6 +15,12 @@ export type VenueDetailOut = {
   timezone?: string | null;
 };
 
+export type CategoryOut = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
 export type EventOut = {
   id: number;
   title: string;
@@ -24,6 +30,7 @@ export type EventOut = {
   price_text?: string | null;
   external_url?: string | null;
   status: "scheduled" | "canceled" | string;
+  categories: CategoryOut[];
 };
 
 export type EventOccurrenceOut = {

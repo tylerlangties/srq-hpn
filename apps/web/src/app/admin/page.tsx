@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
 import type {
+  DuplicateGroupOut,
   EventSearchOut,
   IngestResult,
   SourceFeedCleanupResult,
@@ -50,6 +51,12 @@ export default function AdminPage() {
   const [searchStatus, setSearchStatus] = useState<"idle" | "loading" | "error">("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hidingEventId, setHidingEventId] = useState<number | null>(null);
+
+  const [dupeSourceId, setDupeSourceId] = useState<number | null>(null);
+  const [dupeLimit, setDupeLimit] = useState(100);
+  const [dupeStatus, setDupeStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [dupeResults, setDupeResults] = useState<DuplicateGroupOut[] | null>(null);
+  const [dupeError, setDupeError] = useState<string | null>(null);
 
   useEffect(() => {
     loadSources();
@@ -153,6 +160,23 @@ export default function AdminPage() {
     } catch (e) {
       setCleanupError(e instanceof Error ? e.message : String(e));
       setCleanupStatus("error");
+    }
+  }
+
+  async function handleLoadDuplicates() {
+    if (!dupeSourceId) return;
+    setDupeStatus("loading");
+    setDupeError(null);
+    setDupeResults(null);
+    try {
+      const data = await apiGet<DuplicateGroupOut[]>(
+        `/api/admin/events/duplicates?source_id=${dupeSourceId}&limit=${dupeLimit}`
+      );
+      setDupeResults(data);
+      setDupeStatus("idle");
+    } catch (e) {
+      setDupeError(e instanceof Error ? e.message : String(e));
+      setDupeStatus("error");
     }
   }
 
@@ -269,7 +293,7 @@ export default function AdminPage() {
                   <p className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
                     Ingest Complete
                   </p>
-                  <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="grid grid-cols-4 gap-4 text-center">
                     <div>
                       <p className="text-2xl font-bold text-green-700 dark:text-green-400">
                         {ingestResult.feeds_seen}
@@ -298,6 +322,20 @@ export default function AdminPage() {
                       </p>
                       <p className="text-xs text-green-600 dark:text-green-500 font-medium">
                         Errors
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        className={`text-2xl font-bold ${
+                          ingestResult.cf_challenges > 0
+                            ? "text-orange-600 dark:text-orange-400"
+                            : "text-green-700 dark:text-green-400"
+                        }`}
+                      >
+                        {ingestResult.cf_challenges}
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-500 font-medium">
+                        CF Blocked
                       </p>
                     </div>
                   </div>
@@ -545,6 +583,117 @@ export default function AdminPage() {
                 </ul>
               ))}
           </div>
+        </div>
+
+        {/* Duplicate event preview */}
+        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Duplicate event preview
+          </h2>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+            Groups duplicates by normalized title and start time for a given source.
+          </p>
+
+          {!sources ? (
+            <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+              Loading sources...
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                    Source
+                  </label>
+                  <select
+                    value={dupeSourceId ?? ""}
+                    onChange={(e) => {
+                      setDupeSourceId(e.target.value ? parseInt(e.target.value) : null);
+                      setDupeResults(null);
+                      setDupeError(null);
+                      setDupeStatus("idle");
+                    }}
+                    className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                  >
+                    <option value="">-- Select a source --</option>
+                    {sources.map((source) => (
+                      <option key={source.id} value={source.id}>
+                        {source.name} ({source.feed_count} feeds)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                    Limit
+                  </label>
+                  <select
+                    value={dupeLimit}
+                    onChange={(e) => {
+                      setDupeLimit(parseInt(e.target.value));
+                      setDupeResults(null);
+                      setDupeError(null);
+                      setDupeStatus("idle");
+                    }}
+                    className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                  >
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                    <option value={500}>500</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={handleLoadDuplicates}
+                disabled={!dupeSourceId || dupeStatus === "loading"}
+                className="rounded-lg bg-blue-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                {dupeStatus === "loading" ? "Loading..." : "Preview duplicates"}
+              </button>
+
+              {dupeError && (
+                <div className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-3">
+                  <p className="text-sm text-red-800 dark:text-red-400">{dupeError}</p>
+                </div>
+              )}
+
+              {dupeStatus === "idle" && dupeResults && (
+                <div className="space-y-2">
+                  {dupeResults.length === 0 ? (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      No duplicate groups found.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 max-h-80 overflow-y-auto">
+                      {dupeResults.map((group, idx) => (
+                        <li
+                          key={`${group.title_norm}-${group.start_utc}-${idx}`}
+                          className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-3"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                              {group.title_norm}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatFirstStart(group.start_utc)}
+                            </span>
+                            <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                              {group.occurrences} occurrences
+                            </span>
+                          </div>
+                          <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                            Event IDs: {group.event_ids.join(", ")}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Links Section */}

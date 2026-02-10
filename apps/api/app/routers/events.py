@@ -44,7 +44,7 @@ def events_for_day(
         .where(EventOccurrence.start_datetime_utc < end_utc)
         .where(Event.hidden.is_(False))
         .options(
-            selectinload(EventOccurrence.event),
+            selectinload(EventOccurrence.event).selectinload(Event.categories),
             selectinload(EventOccurrence.venue),
         )
         .order_by(EventOccurrence.start_datetime_utc.asc())
@@ -117,7 +117,7 @@ def events_for_range(
         .where(EventOccurrence.start_datetime_utc < end_utc)
         .where(Event.hidden.is_(False))
         .options(
-            selectinload(EventOccurrence.event),
+            selectinload(EventOccurrence.event).selectinload(Event.categories),
             selectinload(EventOccurrence.venue),
         )
         .order_by(EventOccurrence.start_datetime_utc.asc())

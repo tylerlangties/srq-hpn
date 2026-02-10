@@ -3,6 +3,10 @@ Big Top Brewing collector.
 
 Discovers event iCal URLs via the Popmenu GraphQL API and stores them as
 source_feeds for later ingestion.
+
+When ``--future-only`` is passed, the collector filters events by their
+``createdAt`` timestamp from the GraphQL response (client-side, zero extra
+HTTP requests) instead of downloading each event's iCal to check dates.
 """
 
 from __future__ import annotations
@@ -10,7 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import requests
@@ -25,11 +29,14 @@ from .utils import (
     add_common_args,
     add_feed_args,
     get_http_session,
-    is_future_event,
     upsert_source_feed,
     validate_ical_url,
     write_test_data,
 )
+
+# Default lookback for ``--future-only`` client-side filtering.  Events
+# whose ``createdAt`` is older than this many months are skipped.
+DEFAULT_CREATED_MONTHS = 6
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +60,7 @@ query CalendarEventsQuery($restaurantId: Int!) {
       id
       name
       slug
+      createdAt
     }
   }
 }
@@ -137,6 +145,19 @@ def fetch_events(session: requests.Session) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 
+def _parse_created_at(value: str | None) -> datetime | None:
+    """Parse the ``createdAt`` field from the GraphQL response.
+
+    Popmenu returns ISO-8601 strings like ``2026-02-01T03:37:36-05:00``.
+    """
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except (ValueError, TypeError):
+        return None
+
+
 def run_collector(
     db: Session,
     source: Source,
@@ -144,6 +165,7 @@ def run_collector(
     delay: float = 0.25,
     validate_ical: bool = False,
     future_only: bool = False,
+    created_months: int | None = None,
     categories: str | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
@@ -151,7 +173,19 @@ def run_collector(
     Run the Big Top Brewing collector.
 
     Callable from both CLI and Celery tasks.
+
+    When *future_only* is ``True`` (or *created_months* is set), events are
+    filtered client-side by their ``createdAt`` timestamp from the GraphQL
+    response.  This avoids per-event iCal downloads entirely.
     """
+    # Resolve the createdAt cutoff
+    created_cutoff: datetime | None = None
+    if future_only or created_months is not None:
+        months = (
+            created_months if created_months is not None else DEFAULT_CREATED_MONTHS
+        )
+        created_cutoff = datetime.now(UTC) - timedelta(days=months * 30)
+
     logger.info(
         "Starting Big Top Brewing collector",
         extra={
@@ -160,6 +194,7 @@ def run_collector(
             "dry_run": dry_run,
             "validate_ical": validate_ical,
             "future_only": future_only,
+            "created_cutoff": created_cutoff.isoformat() if created_cutoff else None,
             "delay": delay,
         },
     )
@@ -168,7 +203,7 @@ def run_collector(
         "source_id": source.id,
         "events_fetched": 0,
         "events_upserted": 0,
-        "events_skipped_past": 0,
+        "events_skipped_old": 0,
         "ical_validated": 0,
         "ical_invalid": 0,
         "errors": 0,
@@ -192,11 +227,43 @@ def run_collector(
         stats["status"] = "success"
         return stats
 
+    # Client-side filtering by createdAt (no HTTP requests)
+    if created_cutoff:
+        before_count = len(events)
+        filtered: list[dict[str, Any]] = []
+        for ev in events:
+            created_at = _parse_created_at(ev.get("createdAt"))
+            if created_at is None or created_at >= created_cutoff:
+                filtered.append(ev)
+            else:
+                stats["events_skipped_old"] += 1
+        events = filtered
+        logger.info(
+            "Filtered events by createdAt",
+            extra={
+                "source_id": source.id,
+                "before": before_count,
+                "after": len(events),
+                "skipped_old": stats["events_skipped_old"],
+                "cutoff": created_cutoff.isoformat(),
+            },
+        )
+
+    logger.info(
+        "Processing events",
+        extra={
+            "source_id": source.id,
+            "total_events": len(events),
+            "validate_ical": validate_ical,
+        },
+    )
+
     dry_run_items: list[dict[str, Any]] = []
 
     for i, event in enumerate(events, start=1):
         try:
             slug = event.get("slug")
+            name = event.get("name", "Unknown")
             if not slug:
                 logger.warning(
                     "Event missing slug, skipping",
@@ -206,23 +273,7 @@ def run_collector(
 
             ical_url = build_ical_url(slug)
 
-            # Check if event is in the future
-            if future_only:
-                if not is_future_event(ical_url, session):
-                    stats["events_skipped_past"] += 1
-                    logger.debug(
-                        "Skipping past event",
-                        extra={
-                            "source_id": source.id,
-                            "slug": slug,
-                            "name": event.get("name"),
-                        },
-                    )
-                    time.sleep(delay)
-                    continue
-                time.sleep(delay)
-
-            # Validate iCal URL
+            # Validate iCal URL (requires HTTP request per event)
             if validate_ical:
                 if validate_ical_url(ical_url, session):
                     stats["ical_validated"] += 1
@@ -231,11 +282,12 @@ def run_collector(
                     logger.warning(
                         "iCal URL validation failed, skipping",
                         extra={
-                            "source_id": source.id,
+                            "progress": f"{i}/{len(events)}",
                             "slug": slug,
                             "ical_url": ical_url,
                         },
                     )
+                    time.sleep(delay)
                     continue
                 time.sleep(delay)
 
@@ -253,11 +305,20 @@ def run_collector(
             )
             stats["events_upserted"] += 1
 
+            logger.info(
+                "Upserted event feed",
+                extra={
+                    "progress": f"{i}/{len(events)}",
+                    "slug": slug,
+                    "event_name": name,
+                },
+            )
+
             if dry_run:
                 dry_run_items.append(
                     {
                         "external_id": external_id,
-                        "name": event.get("name"),
+                        "name": name,
                         "slug": slug,
                         "ical_url": ical_url,
                         "page_url": page_url,
@@ -265,7 +326,7 @@ def run_collector(
                     }
                 )
 
-            if i % 25 == 0:
+            if i % 10 == 0:
                 logger.info(
                     "Upsert progress",
                     extra={
@@ -273,7 +334,6 @@ def run_collector(
                         "processed": i,
                         "total": len(events),
                         "upserted": stats["events_upserted"],
-                        "skipped_past": stats["events_skipped_past"],
                     },
                 )
         except Exception as e:
@@ -325,6 +385,16 @@ def main() -> None:
     )
     add_common_args(parser, default_delay=0.25)
     add_feed_args(parser)
+    parser.add_argument(
+        "--created-months",
+        type=int,
+        default=None,
+        help=(
+            f"Only include events created within this many months.  "
+            f"Activated automatically by --future-only (default: "
+            f"{DEFAULT_CREATED_MONTHS}).  Set explicitly to override."
+        ),
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -340,6 +410,7 @@ def main() -> None:
             delay=args.delay,
             validate_ical=args.validate_ical,
             future_only=args.future_only,
+            created_months=args.created_months,
             categories=args.categories,
             dry_run=args.dry_run,
         )

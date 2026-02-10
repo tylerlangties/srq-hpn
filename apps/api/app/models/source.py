@@ -17,6 +17,9 @@ class Source(Base):
     name: Mapped[str] = mapped_column(String(255))
     type: Mapped[str] = mapped_column(String(50))  # e.g. "ical", "rss", "html"
     url: Mapped[str] = mapped_column(Text)
+    # Comma-separated category names applied to *all* events from this source.
+    # Example: "Performing Arts,Live Music"
+    default_categories: Mapped[str | None] = mapped_column(Text, nullable=True)
     feeds: Mapped[list["SourceFeed"]] = relationship(
         back_populates="source",
         cascade="all, delete-orphan",

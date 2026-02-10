@@ -3,13 +3,20 @@ Selby Gardens collector.
 
 Fetches events from the WordPress/MEC REST API and stores discovered iCal
 URLs as source_feeds for later ingestion.
+
+The MEC plugin does not expose event dates in the REST API response, only
+WordPress post dates (published/modified).  To avoid downloading every
+event's individual iCal just to check dates, we pre-filter at the API level
+using the ``after`` parameter on the post published date.  This reduces the
+result set from ~1 000 events to ~40, eliminating the need for per-event
+HTTP calls via ``is_future_event``.
 """
 
 from __future__ import annotations
 
 import logging
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import requests
@@ -25,11 +32,17 @@ from .utils import (
     add_feed_args,
     add_pagination_args,
     get_http_session,
-    is_future_event,
     upsert_source_feed,
     validate_ical_url,
     write_test_data,
 )
+
+# Default lookback for the ``after`` API filter.  Events whose WordPress
+# post was published more than this many months ago are excluded from the
+# API response.  MEC event posts are typically created weeks to months
+# before the event, so 6 months is a safe default that filters out the
+# bulk of definitely-past events while keeping anything plausibly upcoming.
+DEFAULT_PUBLISHED_MONTHS = 6
 
 logger = logging.getLogger(__name__)
 
@@ -85,16 +98,30 @@ def fetch_events_page(
     page: int = 1,
     per_page: int = 100,
     category_ids: list[int] | None = None,
+    published_after: str | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
-    """Fetch a page of events from the REST API."""
+    """Fetch a page of events from the REST API.
+
+    Args:
+        published_after: ISO-8601 datetime string.  When provided, only
+            events whose WordPress post was published after this date are
+            returned (maps to the WP REST API ``after`` parameter).
+    """
     url = f"{BASE_URL}{API_ENDPOINT}"
     params: dict[str, Any] = {"page": page, "per_page": per_page}
     if category_ids:
         params["mec_category"] = ",".join(str(cid) for cid in category_ids)
+    if published_after:
+        params["after"] = published_after
 
     logger.debug(
         "Fetching events page",
-        extra={"url": url, "page": page, "category_ids": category_ids},
+        extra={
+            "url": url,
+            "page": page,
+            "category_ids": category_ids,
+            "published_after": published_after,
+        },
     )
     resp = session.get(url, timeout=30, params=params)
     resp.raise_for_status()
@@ -115,6 +142,7 @@ def fetch_all_events(
     category_ids: list[int] | None = None,
     max_pages: int = 50,
     delay: float = 0.5,
+    published_after: str | None = None,
 ) -> list[dict[str, Any]]:
     """Fetch all events, paginating through results."""
     all_events: list[dict[str, Any]] = []
@@ -122,7 +150,11 @@ def fetch_all_events(
 
     while page <= max_pages:
         events, total_pages = fetch_events_page(
-            session, page=page, per_page=100, category_ids=category_ids
+            session,
+            page=page,
+            per_page=100,
+            category_ids=category_ids,
+            published_after=published_after,
         )
 
         if not events:
@@ -136,6 +168,7 @@ def fetch_all_events(
                 "total_pages": total_pages,
                 "events_this_page": len(events),
                 "total_collected": len(all_events),
+                "published_after": published_after,
             },
         )
 
@@ -162,6 +195,7 @@ def run_collector(
     filters: str | None = None,
     validate_ical: bool = False,
     future_only: bool = False,
+    published_months: int | None = None,
     categories: str | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
@@ -169,7 +203,25 @@ def run_collector(
     Run the Selby Gardens collector.
 
     Callable from both CLI and Celery tasks.
+
+    When *future_only* is ``True`` (or *published_months* is set), the API
+    query is filtered to events whose WordPress post was published within
+    the last *published_months* months (default: ``DEFAULT_PUBLISHED_MONTHS``).
+    This pre-filters ~1 000 events down to ~40 at the API level, avoiding
+    the need to download each event's iCal individually.
     """
+    # Resolve the published-after cutoff.  When --future-only is passed
+    # without an explicit --published-months, we use the default lookback.
+    published_after: str | None = None
+    if future_only or published_months is not None:
+        months = (
+            published_months
+            if published_months is not None
+            else DEFAULT_PUBLISHED_MONTHS
+        )
+        cutoff = datetime.now(UTC) - timedelta(days=months * 30)
+        published_after = cutoff.strftime("%Y-%m-%dT%H:%M:%S")
+
     logger.info(
         "Starting Selby Gardens collector",
         extra={
@@ -181,6 +233,7 @@ def run_collector(
             "dry_run": dry_run,
             "validate_ical": validate_ical,
             "future_only": future_only,
+            "published_after": published_after,
         },
     )
 
@@ -188,7 +241,6 @@ def run_collector(
         "source_id": source.id,
         "events_fetched": 0,
         "events_upserted": 0,
-        "events_skipped_past": 0,
         "ical_validated": 0,
         "ical_invalid": 0,
         "errors": 0,
@@ -215,7 +267,11 @@ def run_collector(
         )
 
     events = fetch_all_events(
-        session, category_ids=category_ids, max_pages=max_pages, delay=delay
+        session,
+        category_ids=category_ids,
+        max_pages=max_pages,
+        delay=delay,
+        published_after=published_after,
     )
     stats["events_fetched"] = len(events)
 
@@ -226,27 +282,22 @@ def run_collector(
 
     dry_run_items: list[dict[str, Any]] = []
 
+    logger.info(
+        "Processing events",
+        extra={
+            "source_id": source.id,
+            "total_events": len(events),
+            "validate_ical": validate_ical,
+        },
+    )
+
     for i, event in enumerate(events, start=1):
         try:
             event_id = event["id"]
+            title = event.get("title", {}).get("rendered", "Unknown")
             ical_url = build_ical_url(event_id)
 
-            # Check if event is in the future
-            if future_only:
-                if not is_future_event(ical_url, session):
-                    stats["events_skipped_past"] += 1
-                    logger.debug(
-                        "Skipping past event",
-                        extra={
-                            "source_id": source.id,
-                            "event_id": event_id,
-                            "title": event.get("title", {}).get("rendered", "Unknown"),
-                        },
-                    )
-                    continue
-                time.sleep(0.1)
-
-            # Validate iCal URL
+            # Validate iCal URL (requires HTTP request per event)
             if validate_ical:
                 if validate_ical_url(ical_url, session):
                     stats["ical_validated"] += 1
@@ -255,12 +306,14 @@ def run_collector(
                     logger.warning(
                         "iCal URL validation failed, skipping",
                         extra={
-                            "source_id": source.id,
+                            "progress": f"{i}/{len(events)}",
                             "event_id": event_id,
                             "ical_url": ical_url,
                         },
                     )
+                    time.sleep(delay)
                     continue
+                time.sleep(delay)
 
             external_id = make_external_id(event_id)
             page_url = event.get("link", f"{BASE_URL}/events/")
@@ -276,19 +329,28 @@ def run_collector(
             )
             stats["events_upserted"] += 1
 
+            logger.info(
+                "Upserted event feed",
+                extra={
+                    "progress": f"{i}/{len(events)}",
+                    "event_id": event_id,
+                    "title": title,
+                },
+            )
+
             if dry_run:
                 dry_run_items.append(
                     {
                         "external_id": external_id,
                         "event_id": event_id,
-                        "title": event.get("title", {}).get("rendered", "Unknown"),
+                        "title": title,
                         "ical_url": ical_url,
                         "page_url": page_url,
                         "categories": categories,
                     }
                 )
 
-            if i % 25 == 0:
+            if i % 10 == 0:
                 logger.info(
                     "Upsert progress",
                     extra={
@@ -356,6 +418,16 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--published-months",
+        type=int,
+        default=None,
+        help=(
+            f"Only include events whose WP post was published within this many "
+            f"months.  Activated automatically by --future-only (default: "
+            f"{DEFAULT_PUBLISHED_MONTHS}).  Set explicitly to override."
+        ),
+    )
+    parser.add_argument(
         "--list-categories",
         action="store_true",
         help="List available categories and exit",
@@ -386,6 +458,7 @@ def main() -> None:
             filters=args.filters,
             validate_ical=args.validate_ical,
             future_only=args.future_only,
+            published_months=args.published_months,
             categories=args.categories,
             dry_run=args.dry_run,
         )

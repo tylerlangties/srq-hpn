@@ -50,6 +50,7 @@ export type IngestResult = {
   feeds_seen: number;
   events_ingested: number;
   errors: number;
+  cf_challenges: number;
 };
 
 export type SourceFeedCleanupRequest = {
@@ -69,4 +70,11 @@ export type EventSearchOut = {
   source_name: string;
   hidden: boolean;
   first_start_utc: string | null;
+};
+
+export type DuplicateGroupOut = {
+  title_norm: string;
+  start_utc: string;
+  occurrences: number;
+  event_ids: number[];
 };

@@ -29,6 +29,7 @@ def ingest_feeds_for_source(
             "feeds_seen": result["feeds_seen"],
             "events_ingested": result["events_ingested"],
             "errors": result["errors"],
+            "cf_challenges": result["cf_challenges"],
         }
     except ValueError as e:
         db.rollback()
