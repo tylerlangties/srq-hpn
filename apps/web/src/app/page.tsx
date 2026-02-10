@@ -9,7 +9,11 @@ import EventCardLarge from "./components/home/EventCardLarge";
 import EventCardCompact from "./components/home/EventCardCompact";
 import ArticlesSection from "./components/home/ArticlesSection";
 import NewsletterCTA from "./components/home/NewsletterCTA";
-import { useEventsForDay, useEventsForRange } from "./hooks/useEvents";
+import {
+  useEventsForDay,
+  useEventsForRange,
+  useEventsThisWeekCount,
+} from "./hooks/useEvents";
 import { useWeather } from "./hooks/useWeather";
 import { addDays, startOfWeekend, toYmd } from "@/lib/dates";
 
@@ -59,6 +63,7 @@ export default function HomePage() {
   const todayEvents = useEventsForDay(todayYmd);
   const tomorrowEvents = useEventsForDay(tomorrowYmd);
   const weekendEvents = useEventsForRange(weekendStartYmd, weekendEndYmd);
+  const eventsThisWeek = useEventsThisWeekCount();
   const weather = useWeather();
 
   const featuredEvent = todayEvents.data?.[0] ?? null;
@@ -86,6 +91,7 @@ export default function HomePage() {
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
         <HeroSection
           featuredEvent={featuredEvent}
+          eventsThisWeekCount={eventsThisWeek.data}
           weather={weather.data}
           weatherLoading={weather.loading}
           weatherError={weather.error}

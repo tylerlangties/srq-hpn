@@ -34,6 +34,25 @@ export const metadata: Metadata = {
   description: "Events and happenings in Sarasota",
 };
 
+const themeInitScript = `
+(() => {
+  try {
+    const savedTheme = localStorage.getItem("theme");
+    const theme =
+      savedTheme === "light" || savedTheme === "dark"
+        ? savedTheme
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.classList.toggle("dark", theme === "dark");
+    root.style.colorScheme = theme;
+  } catch {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,6 +60,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <style>{`html{background:#F6F1EB;}@media (prefers-color-scheme: dark){html{background:#0a0a0b;}}`}</style>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body
         className={`${bricolage.variable} ${dmSans.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
       >

@@ -42,6 +42,9 @@ body {
   font-family: var(--font-body), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html.theme-ready body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 

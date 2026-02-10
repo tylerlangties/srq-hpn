@@ -10,6 +10,12 @@ type EventsState = {
   loading: boolean;
 };
 
+type EventCountState = {
+  data: number | null;
+  error: string | null;
+  loading: boolean;
+};
+
 export function useEventsForDay(day: string): EventsState {
   const [state, setState] = useState<EventsState>({
     data: null,
@@ -85,6 +91,42 @@ export function useEventsForRange(
       cancelled = true;
     };
   }, [start, end]);
+
+  return state;
+}
+
+export function useEventsThisWeekCount(): EventCountState {
+  const [state, setState] = useState<EventCountState>({
+    data: null,
+    error: null,
+    loading: true,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setState({ data: null, error: null, loading: true });
+        const res = await apiGet<{ count: number }>("/api/events/count");
+        if (!cancelled) setState({ data: res.count, error: null, loading: false });
+      } catch (err) {
+        if (!cancelled) {
+          setState({
+            data: null,
+            error: err instanceof Error ? err.message : String(err),
+            loading: false,
+          });
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return state;
 }

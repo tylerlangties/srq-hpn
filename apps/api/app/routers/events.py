@@ -2,14 +2,14 @@ import logging
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_db
 from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
-from app.schemas.events import EventOccurrenceOut
+from app.schemas.events import EventCountOut, EventOccurrenceOut
 
 logger = logging.getLogger(__name__)
 
@@ -144,3 +144,67 @@ def events_for_range(
         )
 
     return results
+
+
+@router.get("/count", response_model=EventCountOut)
+def events_count(
+    start: date | None = Query(
+        default=None,
+        description="Optional start local date YYYY-MM-DD (America/New_York)",
+    ),
+    end: date | None = Query(
+        default=None,
+        description="Optional end local date YYYY-MM-DD (America/New_York), inclusive",
+    ),
+    db: Session = Depends(get_db),
+) -> EventCountOut:
+    """
+    Return count of non-hidden event occurrences for a local date window.
+
+    - If `start` and `end` are omitted, defaults to the current calendar week
+      in America/New_York (Monday-Sunday).
+    - If one is provided, both must be provided.
+    """
+    if (start is None) != (end is None):
+        raise HTTPException(
+            status_code=422,
+            detail="start and end must both be provided, or both omitted",
+        )
+
+    if start is None and end is None:
+        today_local = datetime.now(SRQ_TZ).date()
+        start = today_local - timedelta(days=today_local.weekday())
+        end = start + timedelta(days=6)
+
+    assert start is not None
+    assert end is not None
+
+    if end < start:
+        raise HTTPException(status_code=422, detail="end must be >= start")
+
+    local_start = datetime.combine(start, time.min, tzinfo=SRQ_TZ)
+    local_end_exclusive = datetime.combine(
+        end + timedelta(days=1),
+        time.min,
+        tzinfo=SRQ_TZ,
+    )
+
+    start_utc = local_start.astimezone(UTC)
+    end_utc = local_end_exclusive.astimezone(UTC)
+
+    stmt = (
+        select(func.count(EventOccurrence.id))
+        .join(Event, EventOccurrence.event_id == Event.id)
+        .where(EventOccurrence.start_datetime_utc >= start_utc)
+        .where(EventOccurrence.start_datetime_utc < end_utc)
+        .where(Event.hidden.is_(False))
+    )
+
+    count = db.scalar(stmt) or 0
+
+    logger.info(
+        "Counted events for range",
+        extra={"start": str(start), "end": str(end), "count": count},
+    )
+
+    return EventCountOut(count=count, start=start, end=end)

@@ -15,7 +15,6 @@ export default function UnresolvedLocationsPage() {
   const [venues, setVenues] = useState<VenueOut[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [creatingVenue, setCreatingVenue] = useState<string | null>(null);
   const [linkingVenue, setLinkingVenue] = useState<string | null>(null);
   const [newVenueName, setNewVenueName] = useState("");
@@ -208,14 +207,6 @@ export default function UnresolvedLocationsPage() {
                   </button>
                 </div>
               </div>
-
-              {expandedGroup === group.location_text && (
-                <div className="mt-4 border-t-2 border-gray-200 dark:border-gray-700 pt-4">
-                  <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">
-                    Sample occurrence IDs: {group.sample_occurrence_ids.join(", ")}
-                  </p>
-                </div>
-              )}
 
               {creatingVenue === group.location_text && (
                 <div className="mt-4 rounded-lg border-2 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 p-4 shadow-sm">

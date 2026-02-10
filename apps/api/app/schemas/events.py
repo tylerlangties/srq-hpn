@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -57,3 +57,10 @@ class EventOccurrenceOut(BaseModel):
     venue: VenueOut | None = None
 
     event: EventOut
+
+
+class EventCountOut(BaseModel):
+    count: int
+    start: date
+    end: date
+    timezone: str = "America/New_York"
