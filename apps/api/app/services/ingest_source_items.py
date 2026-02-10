@@ -15,11 +15,15 @@ from app.ingestion.ical import (
     parse_ics,
     warm_session,
 )
-from app.models.event import Event
-from app.models.event_occurrence import EventOccurrence
 from app.models.source import Source
 from app.models.source_feed import SourceFeed
 from app.services.categorize import filter_known_categories
+from app.services.ingest_bigtop import (
+    build_existing_signature_map,
+    is_bigtop_source,
+    make_signature,
+    prioritize_bigtop_feeds,
+)
 from app.services.ingest_upsert import upsert_event_and_occurrence
 
 logger = logging.getLogger(__name__)
@@ -27,53 +31,6 @@ logger = logging.getLogger(__name__)
 # Default delay between iCal fetches (seconds).  Keeps request rate low
 # enough to avoid triggering Cloudflare rate-limit challenges.
 DEFAULT_FETCH_DELAY: float = 0.5
-
-
-def _normalize_text(value: str | None) -> str:
-    if not value:
-        return ""
-    return " ".join(value.strip().lower().split())
-
-
-def _is_bigtop_source(source: Source) -> bool:
-    return bool(source.url and "bigtopbrewing.com" in source.url.lower())
-
-
-def _is_bigtop_rollup_feed(feed: SourceFeed) -> bool:
-    external_id = (feed.external_id or "").lower()
-    ical_url = (feed.ical_url or "").lower()
-    page_url = (feed.page_url or "").lower()
-    return (
-        "happenings" in external_id
-        or "happenings" in ical_url
-        or "happenings" in page_url
-    )
-
-
-def _find_existing_event_by_signature(
-    db: Session,
-    *,
-    source_id: int,
-    title_norm: str,
-    start_utc: datetime,
-) -> Event | None:
-    if not title_norm:
-        return None
-
-    rows = db.execute(
-        select(EventOccurrence, Event)
-        .join(Event, Event.id == EventOccurrence.event_id)
-        .where(
-            Event.source_id == source_id,
-            EventOccurrence.start_datetime_utc == start_utc,
-        )
-    ).all()
-
-    for occ, event in rows:
-        if _normalize_text(event.title) == title_norm:
-            return event
-
-    return None
 
 
 def ingest_source_items(
@@ -108,11 +65,11 @@ def ingest_source_items(
         .limit(limit)
     ).all()
 
-    is_bigtop = _is_bigtop_source(source)
+    is_bigtop = is_bigtop_source(source)
     if is_bigtop and items:
-        rollups = [item for item in items if _is_bigtop_rollup_feed(item)]
-        non_rollups = [item for item in items if item not in rollups]
-        items = non_rollups + rollups
+        # Required due to weird bigtop event structure, prevents duplicates
+        # Big top has a monthly "roundup" event ical that needs to be last (for deduping properly)
+        items = prioritize_bigtop_feeds(items)
 
     logger.info(
         "Found source feeds to process",
@@ -146,6 +103,15 @@ def ingest_source_items(
             ics_bytes = fetch_ics(item.ical_url, session=session)
             parsed = parse_ics(ics_bytes)  # usually 1 event, but can be many
 
+            existing_signature_map: dict[tuple[str, datetime], str] = {}
+            if is_bigtop:
+                start_times = {ev.start_utc for ev in parsed}
+                existing_signature_map = build_existing_signature_map(
+                    db,
+                    source_id=source.id,
+                    start_times=start_times,
+                )
+
             events_parsed_count = len(parsed)
             events_ingested_count = 0
 
@@ -177,8 +143,7 @@ def ingest_source_items(
                         )
                     )
 
-                title_norm = _normalize_text(ev.summary)
-                signature = (title_norm, ev.start_utc)
+                signature = make_signature(ev.summary, ev.start_utc)
 
                 if is_bigtop:
                     if signature in seen_signatures:
@@ -193,17 +158,12 @@ def ingest_source_items(
                         )
                         continue
 
-                    existing = _find_existing_event_by_signature(
-                        db,
-                        source_id=source.id,
-                        title_norm=title_norm,
-                        start_utc=ev.start_utc,
-                    )
-                    if existing and existing.external_id:
+                    existing_external_id = existing_signature_map.get(signature)
+                    if existing_external_id:
                         upsert_event_and_occurrence(
                             db,
                             source=source,
-                            external_id=existing.external_id,
+                            external_id=existing_external_id,
                             title=ev.summary,
                             description=ev.description,
                             location=ev.location,

@@ -103,7 +103,8 @@ def fetch_events_page(
     """Fetch a page of events from the REST API.
 
     Args:
-        published_after: ISO-8601 datetime string.  When provided, only
+        published_after: UTC ISO-8601 datetime string (``...Z``).  When
+            provided, only
             events whose WordPress post was published after this date are
             returned (maps to the WP REST API ``after`` parameter).
     """
@@ -220,7 +221,10 @@ def run_collector(
             else DEFAULT_PUBLISHED_MONTHS
         )
         cutoff = datetime.now(UTC) - timedelta(days=months * 30)
-        published_after = cutoff.strftime("%Y-%m-%dT%H:%M:%S")
+        # Keep this explicitly UTC so WP's ``after`` filter is unambiguous.
+        published_after = (
+            cutoff.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        )
 
     logger.info(
         "Starting Selby Gardens collector",

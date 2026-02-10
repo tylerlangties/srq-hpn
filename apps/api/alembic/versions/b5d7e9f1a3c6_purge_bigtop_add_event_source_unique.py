@@ -1,6 +1,6 @@
 """purge big top events and add unique constraint on (source_id, external_id)
 
-1. Delete all Big Top events (source_id=5) and their source_feeds.
+1. Resolve the Big Top source dynamically and delete its events/source_feeds.
    ON DELETE CASCADE on event_occurrences and event_categories handles
    child rows automatically.
 2. Deduplicate any remaining events across ALL sources so the new
@@ -29,27 +29,51 @@ down_revision: str | Sequence[str] | None = "a1b2c3d4e5f6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-# Big Top Brewing source ID (from sources table).
-BIGTOP_SOURCE_ID = 5
+
+def _resolve_bigtop_source_id(conn) -> int:
+    rows = conn.execute(
+        sa.text(
+            """
+            SELECT id, name, url
+            FROM sources
+            WHERE lower(name) LIKE :name_pattern
+               OR lower(url) LIKE :url_pattern
+            ORDER BY id
+            """
+        ),
+        {
+            "name_pattern": "%big top brewing%",
+            "url_pattern": "%bigtopbrewing.com%",
+        },
+    ).all()
+
+    if len(rows) != 1:
+        matches = [f"id={row.id} name={row.name!r} url={row.url!r}" for row in rows]
+        raise RuntimeError(
+            "Expected exactly one Big Top source row, " f"found {len(rows)}: {matches}"
+        )
+
+    return int(rows[0].id)
 
 
 def upgrade() -> None:
     conn = op.get_bind()
+    bigtop_source_id = _resolve_bigtop_source_id(conn)
 
     # ── 1. Purge all Big Top events and source feeds ────────────────────
     # CASCADE on event_occurrences and event_categories FKs handles
     # child rows automatically, so a single DELETE is sufficient.
     result = conn.execute(
         sa.text("DELETE FROM events WHERE source_id = :sid"),
-        {"sid": BIGTOP_SOURCE_ID},
+        {"sid": bigtop_source_id},
     )
-    print(f"  Deleted {result.rowcount} Big Top events (source_id={BIGTOP_SOURCE_ID})")
+    print(f"  Deleted {result.rowcount} Big Top events (source_id={bigtop_source_id})")
 
     # Also clear stale source_feeds so the collector re-discovers only
     # current events from the GraphQL API on the next run.
     result = conn.execute(
         sa.text("DELETE FROM source_feeds WHERE source_id = :sid"),
-        {"sid": BIGTOP_SOURCE_ID},
+        {"sid": bigtop_source_id},
     )
     print(f"  Deleted {result.rowcount} Big Top source feeds")
 

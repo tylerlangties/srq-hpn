@@ -8,6 +8,8 @@ Create Date: 2026-02-08 12:00:00.000000
 
 from collections.abc import Sequence
 
+import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -42,19 +44,36 @@ SOURCE_CATEGORIES: dict[str, str] = {
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
     for name_pattern, categories in SOURCE_CATEGORIES.items():
-        op.execute(
-            f"UPDATE sources "
-            f"SET default_categories = '{categories}' "
-            f"WHERE name ILIKE '%{name_pattern}%' "
-            f"AND default_categories IS NULL"
+        conn.execute(
+            sa.text(
+                """
+                UPDATE sources
+                SET default_categories = :categories
+                WHERE name ILIKE :name_pattern
+                  AND default_categories IS NULL
+                """
+            ),
+            {
+                "categories": categories,
+                "name_pattern": f"%{name_pattern}%",
+            },
         )
 
 
 def downgrade() -> None:
+    conn = op.get_bind()
     for name_pattern in SOURCE_CATEGORIES:
-        op.execute(
-            f"UPDATE sources "
-            f"SET default_categories = NULL "
-            f"WHERE name ILIKE '%{name_pattern}%'"
+        conn.execute(
+            sa.text(
+                """
+                UPDATE sources
+                SET default_categories = NULL
+                WHERE name ILIKE :name_pattern
+                """
+            ),
+            {
+                "name_pattern": f"%{name_pattern}%",
+            },
         )
