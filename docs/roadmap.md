@@ -101,7 +101,16 @@ This plan expands your high-level steps into concrete tasks, file touchpoints, a
 - **API**: In [apps/api/app/routers/events.py](apps/api/app/routers/events.py), add a GET endpoint (e.g. `GET /api/events/count?start=...&end=...` or `GET /api/events/stats`) that returns the count of (non-hidden) occurrences in the given week (same date logic as `/range`). Use America/New_York for "this week" boundaries.
 - **Frontend**: In [apps/web/src/app/components/home/HeroSection.tsx](apps/web/src/app/components/home/HeroSection.tsx), fetch this count (e.g. from a small hook or server component that calls the API) and replace the hardcoded "42 Events this week in Sarasota" with the real value. Handle loading/error (e.g. show "Events this week" without number on error).
 
-**Deliverables:** Unified scraper CLI + logging; consistent event card layout; full Docker compose + Dockerfiles; admin behind auth with role; hero shows live event count.
+### 2.6 Weather report caching (API limit protection)
+
+- **Goal:** Avoid calling the weather provider on every request by caching forecast snapshots in Postgres and serving weather from cache first.
+- **Cadence:** Run a scheduled job (Celery Beat or cron) **2-4 times per day** (e.g. every 6-12 hours). This is enough for event cards and keeps calls well below typical free-tier limits.
+- **Storage:** Add a small table (e.g. `weather_reports`) with fields like `id`, `provider`, `location_key`, `forecast_date`, `payload_json`, `fetched_at`, and `expires_at`. Keep raw provider payload in JSON for flexibility.
+- **Read path:** API endpoints that need weather should read the latest non-expired row for a location/date range; only trigger an on-demand fetch if cache is missing or stale.
+- **Rate-limit guardrails:** Add a daily max-fetch cap per provider/location, log fetch counts, and alert/skip fetches when near quota. Use jitter in scheduled tasks so all sources do not fire at the same second.
+- **Retention:** Keep a short retention window (e.g. 7-14 days of snapshots) and prune older records with a periodic cleanup task.
+
+**Deliverables:** Unified scraper CLI + logging; consistent event card layout; full Docker compose + Dockerfiles; admin behind auth with role; hero shows live event count; weather reports cached in DB with scheduled refresh and quota guardrails.
 
 ---
 

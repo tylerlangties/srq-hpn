@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
+import { toEventRouteSegment } from "@/lib/event-display";
 import {
   formatEventTime,
   getEventPriceLabel,
@@ -19,8 +20,9 @@ export default function FeaturedEventCard({ event }: Props) {
   const timeOfDay = getTimeOfDayLabel(startDate);
   const venue = getEventVenueLabel(event);
   const priceLabel = getEventPriceLabel(event);
-  const href = event.event.external_url ?? "/events";
-  const isExternal = Boolean(event.event.external_url);
+  const href = `/events/${encodeURIComponent(
+    toEventRouteSegment({ id: event.event.id, slug: event.event.slug })
+  )}`;
 
   const card = (
     <div className="relative flex min-h-[24rem] flex-col rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 to-white/70 p-5 shadow-2xl shadow-coral/10 backdrop-blur-sm dark:border-white/10 dark:bg-gradient-to-br dark:from-white/10 dark:to-white/5 dark:shadow-none">
@@ -54,14 +56,6 @@ export default function FeaturedEventCard({ event }: Props) {
       </div>
     </div>
   );
-
-  if (isExternal) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer" className="block">
-        {card}
-      </a>
-    );
-  }
 
   return (
     <Link href={href} className="block">

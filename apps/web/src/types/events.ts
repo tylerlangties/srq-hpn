@@ -41,3 +41,10 @@ export type EventOccurrenceOut = {
   venue: VenueOut | null;
   location_text?: string | null;
 };
+
+export type EventDetailOut = {
+  event: EventOut;
+  next_occurrence: EventOccurrenceOut;
+  upcoming_occurrences: EventOccurrenceOut[];
+  more_from_venue: EventOccurrenceOut[];
+};

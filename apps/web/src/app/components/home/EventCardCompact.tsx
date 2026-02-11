@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
+import { toEventRouteSegment } from "@/lib/event-display";
 import {
   formatDayLabel,
   formatEventTime,
@@ -14,8 +15,9 @@ export default function EventCardCompact({ event }: Props) {
   const time = formatEventTime(event);
   const day = formatDayLabel(event);
   const venue = getEventVenueLabel(event);
-  const href = event.event.external_url ?? "/events";
-  const isExternal = Boolean(event.event.external_url);
+  const href = `/events/${encodeURIComponent(
+    toEventRouteSegment({ id: event.event.id, slug: event.event.slug })
+  )}`;
 
   const card = (
     <article className="group flex h-full min-h-36 cursor-pointer flex-col rounded-2xl border border-white/60 bg-white/80 p-4 transition-all hover:bg-white hover:shadow-lg hover:shadow-charcoal/5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10 dark:hover:shadow-purple-500/5">
@@ -43,14 +45,6 @@ export default function EventCardCompact({ event }: Props) {
       </div>
     </article>
   );
-
-  if (isExternal) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer" className="block h-full">
-        {card}
-      </a>
-    );
-  }
 
   return (
     <Link href={href} className="block h-full">

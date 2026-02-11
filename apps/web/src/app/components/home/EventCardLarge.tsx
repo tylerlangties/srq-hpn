@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
+import { toEventRouteSegment } from "@/lib/event-display";
 import {
   formatEventTime,
   getEventAreaLabel,
@@ -18,8 +19,9 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
   const venue = getEventVenueLabel(event);
   const area = getEventAreaLabel(event);
   const priceLabel = getEventPriceLabel(event);
-  const href = event.event.external_url ?? "/events";
-  const isExternal = Boolean(event.event.external_url);
+  const href = `/events/${encodeURIComponent(
+    toEventRouteSegment({ id: event.event.id, slug: event.event.slug })
+  )}`;
 
   const toneClasses =
     tone === "palm"
@@ -82,14 +84,6 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
       </div>
     </article>
   );
-
-  if (isExternal) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer" className="block h-full">
-        {card}
-      </a>
-    );
-  }
 
   return (
     <Link href={href} className="block h-full">

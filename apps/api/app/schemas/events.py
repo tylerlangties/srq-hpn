@@ -64,3 +64,16 @@ class EventCountOut(BaseModel):
     start: date
     end: date
     timezone: str = "America/New_York"
+
+
+class EventDetailOut(BaseModel):
+    event: EventOut
+    next_occurrence: EventOccurrenceOut
+    upcoming_occurrences: list[EventOccurrenceOut] = Field(default_factory=list)
+    more_from_venue: list[EventOccurrenceOut] = Field(default_factory=list)
+
+
+class EventSlugResolutionOut(BaseModel):
+    event_id: int
+    canonical_segment: str
+    is_unique: bool
