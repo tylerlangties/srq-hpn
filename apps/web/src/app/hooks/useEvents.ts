@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api";
+import { API_PATHS, withQuery } from "@/lib/api-paths";
 import type { EventOccurrenceOut } from "@/types/events";
 
 type EventsState = {
@@ -29,9 +30,7 @@ export function useEventsForDay(day: string): EventsState {
     async function load() {
       try {
         setState({ data: null, error: null, loading: true });
-        const res = await apiGet<EventOccurrenceOut[]>(
-          `/api/events/day?day=${encodeURIComponent(day)}`
-        );
+        const res = await apiGet<EventOccurrenceOut[]>(withQuery(API_PATHS.events.day, { day }));
         if (!cancelled) setState({ data: res, error: null, loading: false });
       } catch (err) {
         if (!cancelled) {
@@ -71,7 +70,7 @@ export function useEventsForRange(
       try {
         setState({ data: null, error: null, loading: true });
         const res = await apiGet<EventOccurrenceOut[]>(
-          `/api/events/range?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+          withQuery(API_PATHS.events.range, { start, end })
         );
         if (!cancelled) setState({ data: res, error: null, loading: false });
       } catch (err) {
@@ -108,7 +107,7 @@ export function useEventsThisWeekCount(): EventCountState {
     async function load() {
       try {
         setState({ data: null, error: null, loading: true });
-        const res = await apiGet<{ count: number }>("/api/events/count");
+        const res = await apiGet<{ count: number }>(API_PATHS.events.count);
         if (!cancelled) setState({ data: res.count, error: null, loading: false });
       } catch (err) {
         if (!cancelled) {

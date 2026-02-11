@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api";
+import { API_PATHS, withQuery } from "@/lib/api-paths";
 import type { EventOccurrenceOut, VenueDetailOut, VenueOut } from "@/types/events";
 
 type State<T> = {
@@ -23,7 +24,7 @@ export function useVenues(): State<VenueOut[]> {
     async function load() {
       try {
         setState({ data: null, error: null, loading: true });
-        const res = await apiGet<VenueOut[]>("/api/venues");
+        const res = await apiGet<VenueOut[]>(API_PATHS.venues.list);
         if (!cancelled) setState({ data: res, error: null, loading: false });
       } catch (err) {
         if (!cancelled) {
@@ -59,7 +60,7 @@ export function useVenueDetail(slug: string): State<VenueDetailOut> {
     async function load() {
       try {
         setState({ data: null, error: null, loading: true });
-        const res = await apiGet<VenueDetailOut>(`/api/venues/${slug}`);
+        const res = await apiGet<VenueDetailOut>(API_PATHS.venues.detail(slug));
         if (!cancelled) setState({ data: res, error: null, loading: false });
       } catch (err) {
         if (!cancelled) {
@@ -100,7 +101,7 @@ export function useVenueEvents(
       try {
         setState({ data: null, error: null, loading: true });
         const res = await apiGet<EventOccurrenceOut[]>(
-          `/api/venues/${slug}/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+          withQuery(API_PATHS.venues.events(slug), { start, end })
         );
         if (!cancelled) setState({ data: res, error: null, loading: false });
       } catch (err) {

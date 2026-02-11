@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { CONTENT_API_PATHS, withQuery } from "@/lib/api-paths";
 import type { ArticleSummary } from "@/types/articles";
 
 type Props = {
@@ -29,8 +30,7 @@ export default function ArticlesSection({ showHeader = true, limit }: Props) {
       try {
         setLoading(true);
         setError(null);
-        const query = resolvedLimit ? `?limit=${resolvedLimit}` : "";
-        const response = await fetch(`/api/articles${query}`, {
+        const response = await fetch(withQuery(CONTENT_API_PATHS.articles, { limit: resolvedLimit }), {
           signal: controller.signal,
         });
 

@@ -1,4 +1,5 @@
-import { API_BASE_URL } from "@/lib/api";
+import { apiGet } from "@/lib/api";
+import { API_PATHS, withQuery } from "@/lib/api-paths";
 import type { EventDetailOut, EventOccurrenceOut } from "@/types/events";
 
 export type EventRouteResolution = {
@@ -58,12 +59,7 @@ export function summarizeDescription(value: string | null | undefined) {
 
 async function fetchEventDetail(eventId: number): Promise<EventDetailOut | null> {
   try {
-    const url = `${API_BASE_URL}/api/events/${eventId}`;
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) {
-      return null;
-    }
-    return (await response.json()) as EventDetailOut;
+    return await apiGet<EventDetailOut>(API_PATHS.events.detail(eventId));
   } catch {
     return null;
   }
@@ -74,18 +70,14 @@ export async function resolveEventRoute(
   eventId?: number | null
 ): Promise<EventRouteResolution | null> {
   try {
-    const query = eventId ? `?event_id=${encodeURIComponent(String(eventId))}` : "";
-    const url = `${API_BASE_URL}/api/events/resolve/${encodeURIComponent(publicSlug)}${query}`;
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) {
-      return null;
-    }
-
-    const payload = (await response.json()) as {
+    const path = withQuery(API_PATHS.events.resolve(publicSlug), {
+      event_id: eventId ?? undefined,
+    });
+    const payload = await apiGet<{
       event_id: number;
       canonical_segment: string;
       is_unique: boolean;
-    };
+    }>(path);
 
     return {
       eventId: payload.event_id,

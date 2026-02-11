@@ -75,7 +75,9 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: srq-hpn-web
     environment:
-      # In production, API is accessed via the same domain through Caddy
+      # Server-side API calls from the web container
+      API_BASE_URL: ${API_BASE_URL:-http://api:8000}
+      # In production, browser API is accessed via same-origin Caddy routing (/api/*)
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
     # No ports exposed - only accessible via Caddy
     expose:

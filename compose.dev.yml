@@ -195,13 +195,15 @@ services:
       dockerfile: apps/web/Dockerfile.dev
     container_name: srq-hpn-web-dev
     environment:
-      # Use Docker service name for server-side API calls
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      # Server-side API calls from the web container
+      API_BASE_URL: http://api:8000
+      # Browser API calls use same-origin (/api/* proxied by Caddy)
+      NEXT_PUBLIC_API_BASE_URL: ""
       # Enable polling for file watching (critical for hot reload in Docker)
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       # Mount source code for hot reload
       - ./apps/web/src:/app/apps/web/src:cached
@@ -214,6 +216,19 @@ services:
       # Persist Next.js cache for faster rebuilds
       - web_next_cache:/app/apps/web/.next
     depends_on:
+      - api
+    networks:
+      - srq-network-dev
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: srq-hpn-caddy-dev
+    ports:
+      - "3000:80"
+    volumes:
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - web
       - api
     networks:
       - srq-network-dev

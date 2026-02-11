@@ -76,12 +76,36 @@ This starts: DB, Redis, API, Celery worker, Celery beat, Flower, and Web.
 - **API**: http://localhost:8000
 - **Flower** (Celery): http://localhost:5555
 
-### Option B: Local (DB + API + Web separately)```bash
+### API Routing and Namespaces
+
+The app uses a reverse proxy (Caddy) in Docker environments. Route ownership is:
+
+- **FastAPI public API**: `/api/*` (for example `/api/events/range`)
+- **Next.js route handlers**: `/content-api/*` (for example `/content-api/articles`)
+
+Why this split exists:
+
+- Both Next.js and FastAPI can define `/api/*` routes.
+- Reserving `/api/*` for FastAPI avoids conflicts and keeps backend endpoints conventional.
+- Internal Next.js handlers use `/content-api/*` to stay explicit and collision-free.
+
+In Docker dev:
+
+- Open the app at `http://localhost:3000` (served through Caddy).
+- Browser calls to `/api/*` are proxied to FastAPI.
+- Browser calls to `/content-api/*` are handled by Next.js.
+- `http://localhost:8000` is still exposed for direct API debugging.
+
+### Option B: Local (DB + API + Web separately)
+
+```bash
 # 1. Start database
 pnpm db:up
 
 # 2. Create API venv and run migrations (see apps/api/)
-pnpm dev:api# 3. In another terminal: frontend
+pnpm dev:api
+
+# 3. In another terminal: frontend
 pnpm dev:web
 ```
 
@@ -106,7 +130,9 @@ pnpm dev:web
 
 ---
 
-## 📚 Documentation- [Database & Infrastructure](docs/database-guide.md)
+## 📚 Documentation
+
+- [Database & Infrastructure](docs/database-guide.md)
 - [Celery Guide](docs/celery-guide.md)
 - [Logging](docs/logging.md)
 - [Roadmap](docs/roadmap.md)

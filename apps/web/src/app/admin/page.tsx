@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
+import { API_PATHS, withQuery } from "@/lib/api-paths";
 import type {
   DuplicateGroupOut,
   EventSearchOut,
@@ -72,7 +73,7 @@ export default function AdminPage() {
     setSearchError(null);
     try {
       const data = await apiGet<EventSearchOut[]>(
-        `/api/admin/events/search?q=${encodeURIComponent(q.trim())}&limit=20`
+        withQuery(API_PATHS.admin.eventsSearch, { q: q.trim(), limit: 20 })
       );
       setSearchResults(data);
       setSearchStatus("idle");
@@ -94,10 +95,9 @@ export default function AdminPage() {
     setHidingEventId(eventId);
     setSearchError(null);
     try {
-      await apiPatch<{ event_id: number; hidden: boolean }>(
-        `/api/admin/events/${eventId}`,
-        { hidden }
-      );
+      await apiPatch<{ event_id: number; hidden: boolean }>(API_PATHS.admin.event(eventId), {
+        hidden,
+      });
       setSearchResults((prev) =>
         prev?.map((e) => (e.id === eventId ? { ...e, hidden } : e)) ?? null
       );
@@ -111,7 +111,7 @@ export default function AdminPage() {
   async function loadSources() {
     try {
       setLoadingError(null);
-      const data = await apiGet<SourceOut[]>("/api/admin/sources");
+      const data = await apiGet<SourceOut[]>(API_PATHS.admin.sources);
       setSources(data);
     } catch (e) {
       setLoadingError(e instanceof Error ? e.message : String(e));
@@ -127,7 +127,7 @@ export default function AdminPage() {
 
     try {
       const result = await apiPost<IngestResult>(
-        `/api/admin/ingest/source/${selectedSourceId}/feeds`,
+        API_PATHS.admin.ingestSourceFeeds(selectedSourceId),
         {}
       );
       setIngestResult(result);
@@ -145,7 +145,7 @@ export default function AdminPage() {
 
     try {
       const result = await apiPost<SourceFeedCleanupResult>(
-        "/api/admin/source-feeds/cleanup",
+        API_PATHS.admin.sourceFeedsCleanup,
         {
           older_than_days: cleanupOlderThanDays,
           source_id: cleanupSourceId ?? undefined,
@@ -170,7 +170,10 @@ export default function AdminPage() {
     setDupeResults(null);
     try {
       const data = await apiGet<DuplicateGroupOut[]>(
-        `/api/admin/events/duplicates?source_id=${dupeSourceId}&limit=${dupeLimit}`
+        withQuery(API_PATHS.admin.duplicates, {
+          source_id: dupeSourceId,
+          limit: dupeLimit,
+        })
       );
       setDupeResults(data);
       setDupeStatus("idle");

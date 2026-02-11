@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "@/lib/api";
+import { API_PATHS } from "@/lib/api-paths";
 import type {
   UnresolvedLocationGroup,
   UnresolvedOccurrenceOut,
@@ -31,8 +32,8 @@ export default function UnresolvedLocationsPage() {
       setError(null);
       setLoading(true);
       const [groupsData, venuesData] = await Promise.all([
-        apiGet<UnresolvedLocationGroup[]>("/api/admin/venues/unresolved"),
-        apiGet<VenueOut[]>("/api/admin/venues"),
+        apiGet<UnresolvedLocationGroup[]>(API_PATHS.admin.unresolvedVenues),
+        apiGet<VenueOut[]>(API_PATHS.admin.venues),
       ]);
       setGroups(groupsData);
       setVenues(venuesData);
@@ -60,7 +61,7 @@ export default function UnresolvedLocationsPage() {
           : null,
       };
 
-      await apiPost("/api/admin/venues/create-from-location", request);
+      await apiPost(API_PATHS.admin.createVenueFromLocation, request);
       setCreatingVenue(null);
       setNewVenueName("");
       setNewVenueArea("");
@@ -81,7 +82,7 @@ export default function UnresolvedLocationsPage() {
       setError(null);
       // Get all occurrences for this location
       const occurrences = await apiGet<UnresolvedOccurrenceOut[]>(
-        `/api/admin/venues/unresolved/${encodeURIComponent(locationText)}/occurrences`
+        API_PATHS.admin.unresolvedVenueOccurrences(locationText)
       );
 
       // Link all occurrences to the selected venue
@@ -90,7 +91,7 @@ export default function UnresolvedLocationsPage() {
           occurrence_id: occ.id,
           venue_id: selectedVenueId,
         };
-        await apiPost("/api/admin/venues/link", request);
+        await apiPost(API_PATHS.admin.linkVenue, request);
       }
 
       setLinkingVenue(null);

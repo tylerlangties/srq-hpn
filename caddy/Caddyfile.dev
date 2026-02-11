@@ -1,0 +1,16 @@
+:80 {
+    # FastAPI public API
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+
+    # All other routes, including Next.js content-api handlers
+    handle {
+        reverse_proxy web:3000
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}
