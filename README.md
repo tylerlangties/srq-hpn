@@ -109,6 +109,25 @@ pnpm dev:api
 pnpm dev:web
 ```
 
+### Admin auth bootstrap
+
+Admin routes are protected with role-based auth (`admin`, `user`) using a
+first-party httpOnly cookie.
+
+Set these API env vars in `apps/api/.env`
+
+- `JWT_SECRET` (required)
+- `JWT_ALGORITHM` (optional, defaults to `HS256`)
+- `JWT_EXPIRES_MINUTES` (optional, defaults to `60`)
+- `COOKIE_SECURE` (optional, `true` in production)
+- `COOKIE_SAMESITE` (optional, defaults to `lax`)
+
+Create your first admin user:
+
+```bash
+python apps/api/scripts/create_admin_user.py --email admin@example.com --password "change-me-now"
+```
+
 ---
 
 ## 📜 Scripts

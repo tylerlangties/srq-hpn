@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, require_role
 from app.ingestion.ical import fetch_ics, parse_ics
 from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
@@ -19,7 +19,11 @@ from app.services.ingest_upsert import upsert_event_and_occurrence
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(
+    prefix="/api/admin",
+    tags=["admin"],
+    dependencies=[Depends(require_role("admin"))],
+)
 
 
 class SourceFeedCleanupRequest(BaseModel):

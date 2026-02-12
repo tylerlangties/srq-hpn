@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, require_role
 from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.models.venue import Venue
@@ -24,7 +24,11 @@ from app.services.venue_resolver import normalize_location
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/admin/venues", tags=["admin"])
+router = APIRouter(
+    prefix="/api/admin/venues",
+    tags=["admin"],
+    dependencies=[Depends(require_role("admin"))],
+)
 
 
 @router.get("/unresolved", response_model=list[UnresolvedLocationGroup])

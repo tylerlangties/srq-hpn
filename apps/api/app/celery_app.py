@@ -80,15 +80,15 @@ app.conf.beat_schedule = {
     # ---------------------------------------------------------------------
     # Van Wezel: Direct scraper (scrapes HTML, ingests directly)
     # Runs daily at 6:00 AM Eastern
-    "scrape-vanwezel-daily": {
-        "task": "app.tasks.scrape_vanwezel",
+    "collect-vanwezel-daily": {
+        "task": "app.tasks.collect_vanwezel",
         "schedule": crontab(minute=0, hour=6),
         "kwargs": {"source_id": 1},  # Update this to your actual source ID
     },
     # Mote Marine: Source feed scraper (discovers iCal URLs)
     # Runs daily at 6:15 AM Eastern
-    "scrape-mote-daily": {
-        "task": "app.tasks.scrape_mote",
+    "collect-mote-daily": {
+        "task": "app.tasks.collect_mote",
         "schedule": crontab(minute=15, hour=6),
         "kwargs": {"source_id": 2},  # Update this to your actual source ID
     },

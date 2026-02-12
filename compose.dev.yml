@@ -62,6 +62,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     container_name: srq-hpn-api-dev
+    env_file:
+      - ./.env.local
     environment:
       # Limited user - used by the running API (can only read/write data)
       DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD:-srq_hpn_app_dev_password}@db:5432/${POSTGRES_DB:-srq_hpn}
@@ -95,6 +97,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     container_name: srq-hpn-celery-worker
+    env_file:
+      - ./.env.local
     # Override the default command to run Celery worker instead of uvicorn
     command: >
       celery -A app.celery_app worker
@@ -129,6 +133,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     container_name: srq-hpn-celery-beat
+    env_file:
+      - ./.env.local
     # Override the default command to run Celery beat scheduler
     command: >
       celery -A app.celery_app beat
@@ -167,6 +173,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     container_name: srq-hpn-flower
+    env_file:
+      - ./.env.local
     # Wait for worker to be ready before starting Flower
     # This avoids "Inspect method failed" warnings at startup
     command: >
@@ -194,6 +202,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile.dev
     container_name: srq-hpn-web-dev
+    env_file:
+      - ./.env.local
     environment:
       # Server-side API calls from the web container
       API_BASE_URL: http://api:8000

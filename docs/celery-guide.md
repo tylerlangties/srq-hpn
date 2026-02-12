@@ -120,7 +120,7 @@ Tasks run automatically based on the schedule in `apps/api/app/celery_app.py`:
 ```python
 app.conf.beat_schedule = {
     "scrape-vanwezel-daily": {
-        "task": "app.tasks.scrape_vanwezel",
+        "task": "app.tasks.collect_vanwezel",
         "schedule": crontab(minute=0, hour=6),  # 6:00 AM daily
         "kwargs": {"source_id": 1},
     },
@@ -138,7 +138,7 @@ You can run tasks manually using the Celery CLI or Python shell.
 docker compose -f compose.dev.yml exec celery-worker bash
 
 # Then run Python to trigger a task
-python -c "from app.tasks import scrape_vanwezel; scrape_vanwezel.delay(source_id=1)"
+python -c "from app.tasks import collect_vanwezel; collect_vanwezel.delay(source_id=1)"
 ```
 
 #### Method 2: Using Celery CLI
@@ -146,7 +146,7 @@ python -c "from app.tasks import scrape_vanwezel; scrape_vanwezel.delay(source_i
 ```bash
 # Run a task by name
 docker compose -f compose.dev.yml exec celery-worker \
-  celery -A app.celery_app call app.tasks.scrape_vanwezel --kwargs='{"source_id": 1}'
+  celery -A app.celery_app call app.tasks.collect_vanwezel --kwargs='{"source_id": 1}'
 ```
 
 **Flags explained:**
@@ -159,10 +159,10 @@ docker compose -f compose.dev.yml exec celery-worker \
 You can also trigger tasks from your FastAPI code:
 
 ```python
-from app.tasks import scrape_vanwezel
+from app.tasks import collect_vanwezel
 
 # Send task to queue (returns immediately)
-result = scrape_vanwezel.delay(source_id=1)
+result = collect_vanwezel.delay(source_id=1)
 
 # Get the task ID
 print(f"Task ID: {result.id}")
@@ -178,8 +178,8 @@ print(f"Result: {result.get(timeout=300)}")
 
 | Task | Description | Arguments |
 |------|-------------|-----------|
-| `scrape_vanwezel` | Scrapes Van Wezel events directly | `source_id`, `delay=0.5` |
-| `scrape_mote` | Discovers Mote Marine iCal feeds | `source_id`, `months_ahead=2` |
+| `collect_vanwezel` | Scrapes Van Wezel events directly | `source_id`, `delay=0.5` |
+| `collect_mote` | Discovers Mote Marine iCal feeds | `source_id`, `months_ahead=2` |
 | `ingest_source` | Ingests feeds for one source | `source_id`, `limit=100` |
 | `ingest_all_sources` | Ingests feeds for all sources | `limit_per_source=100` |
 | `health_check` | Verifies Celery is working | (none) |
@@ -388,12 +388,12 @@ docker compose -f compose.dev.yml exec celery-worker \
 
 # Manually trigger Van Wezel scraper
 docker compose -f compose.dev.yml exec celery-worker \
-  celery -A app.celery_app call app.tasks.scrape_vanwezel \
+  celery -A app.celery_app call app.tasks.collect_vanwezel \
   --kwargs='{"source_id": 1}'
 
 # Manually trigger Mote Marine scraper
 docker compose -f compose.dev.yml exec celery-worker \
-  celery -A app.celery_app call app.tasks.scrape_mote \
+  celery -A app.celery_app call app.tasks.collect_mote \
   --kwargs='{"source_id": 2}'
 
 # Ingest all source feeds

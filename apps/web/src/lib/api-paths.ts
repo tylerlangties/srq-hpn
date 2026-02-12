@@ -3,6 +3,11 @@ export const CONTENT_API_PATHS = {
 } as const;
 
 export const API_PATHS = {
+  auth: {
+    login: "/api/auth/login",
+    logout: "/api/auth/logout",
+    me: "/api/auth/me",
+  },
   events: {
     day: "/api/events/day",
     range: "/api/events/range",

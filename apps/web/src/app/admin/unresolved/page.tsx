@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "@/lib/api";
 import { API_PATHS } from "@/lib/api-paths";
+import { useAdminGuard } from "@/app/hooks/useAdminGuard";
 import type {
   UnresolvedLocationGroup,
   UnresolvedOccurrenceOut,
@@ -12,6 +13,7 @@ import type {
 } from "@/types/admin";
 
 export default function UnresolvedLocationsPage() {
+  const { checking: authChecking, user } = useAdminGuard();
   const [groups, setGroups] = useState<UnresolvedLocationGroup[] | null>(null);
   const [venues, setVenues] = useState<VenueOut[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +26,18 @@ export default function UnresolvedLocationsPage() {
   const [selectedVenueId, setSelectedVenueId] = useState<number | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user?.role === "admin") {
+      loadData();
+    }
+  }, [user]);
+
+  if (authChecking || !user) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Loading...</div>
+      </div>
+    );
+  }
 
   async function loadData() {
     try {

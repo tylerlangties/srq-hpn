@@ -4,11 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, require_role
 from app.models.source import Source
 from app.services.ingest_source_items import ingest_source_items
 
-router = APIRouter(prefix="/api/admin/ingest", tags=["admin-ingest"])
+router = APIRouter(
+    prefix="/api/admin/ingest",
+    tags=["admin-ingest"],
+    dependencies=[Depends(require_role("admin"))],
+)
 
 
 @router.post("/source/{source_id}/feeds")

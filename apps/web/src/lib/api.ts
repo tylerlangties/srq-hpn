@@ -27,6 +27,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(toApiUrl(path), {
     // For dev, this is fine. We'll tighten caching later.
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!res.ok) {
@@ -45,6 +46,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!res.ok) {
@@ -63,6 +65,7 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!res.ok) {

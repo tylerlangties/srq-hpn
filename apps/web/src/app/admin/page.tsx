@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPatch, apiPost } from "@/lib/api";
 import { API_PATHS, withQuery } from "@/lib/api-paths";
+import { useAdminGuard } from "@/app/hooks/useAdminGuard";
 import type {
   DuplicateGroupOut,
   EventSearchOut,
@@ -31,6 +32,7 @@ function formatFirstStart(iso: string | null): string {
 }
 
 export default function AdminPage() {
+  const { checking: authChecking, user } = useAdminGuard();
   const [sources, setSources] = useState<SourceOut[] | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState<number | null>(null);
   const [ingestStatus, setIngestStatus] = useState<IngestStatus>("idle");
@@ -60,8 +62,10 @@ export default function AdminPage() {
   const [dupeError, setDupeError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSources();
-  }, []);
+    if (user?.role === "admin") {
+      loadSources();
+    }
+  }, [user]);
 
   const runSearch = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -184,6 +188,14 @@ export default function AdminPage() {
   }
 
   const selectedSource = sources?.find((s) => s.id === selectedSourceId);
+
+  if (authChecking || !user) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
