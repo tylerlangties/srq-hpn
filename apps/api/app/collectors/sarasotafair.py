@@ -28,6 +28,8 @@ from app.services.ingest_upsert import upsert_event_and_occurrence
 
 from .utils import (
     add_common_args,
+    add_feed_args,
+    add_pagination_args,
     get_http_session,
     write_test_data,
 )
@@ -393,6 +395,10 @@ def run_collector(
     delay: float = 0.5,
     max_days: int = 90,
     chunk_size: int = 10,
+    max_pages: int = 10,
+    validate_ical: bool = False,
+    future_only: bool = False,
+    categories: str | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     """
@@ -408,8 +414,24 @@ def run_collector(
             "delay": delay,
             "max_days": max_days,
             "chunk_size": chunk_size,
+            "max_pages": max_pages,
+            "validate_ical": validate_ical,
+            "future_only": future_only,
+            "categories": categories,
         },
     )
+
+    if max_pages != 10 or validate_ical or future_only or categories:
+        logger.info(
+            "Some standardized collector flags are accepted but not used by this collector",
+            extra={
+                "source_id": source.id,
+                "max_pages": max_pages,
+                "validate_ical": validate_ical,
+                "future_only": future_only,
+                "categories": categories,
+            },
+        )
 
     stats: dict[str, Any] = {
         "source_id": source.id,
@@ -532,6 +554,8 @@ def main() -> None:
         description="Collect Sarasota Fair events via eventsservice.asmx"
     )
     add_common_args(parser)
+    add_pagination_args(parser)
+    add_feed_args(parser)
     parser.add_argument(
         "--max-days",
         type=int,
@@ -559,6 +583,10 @@ def main() -> None:
             delay=args.delay,
             max_days=args.max_days,
             chunk_size=args.chunk_size,
+            max_pages=args.max_pages,
+            validate_ical=args.validate_ical,
+            future_only=args.future_only,
+            categories=args.categories,
             dry_run=args.dry_run,
         )
 

@@ -27,6 +27,7 @@ from app.services.ingest_upsert import upsert_event_and_occurrence
 
 from .utils import (
     add_common_args,
+    add_feed_args,
     add_pagination_args,
     fetch_html,
     get_http_session,
@@ -440,6 +441,9 @@ def run_collector(
     *,
     delay: float = 0.5,
     max_pages: int = 10,
+    validate_ical: bool = False,
+    future_only: bool = False,
+    categories: str | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     """
@@ -454,8 +458,22 @@ def run_collector(
             "dry_run": dry_run,
             "delay": delay,
             "max_pages": max_pages,
+            "validate_ical": validate_ical,
+            "future_only": future_only,
+            "categories": categories,
         },
     )
+
+    if validate_ical or future_only or categories:
+        logger.info(
+            "Feed-oriented flags are accepted but not used by this collector",
+            extra={
+                "source_id": source.id,
+                "validate_ical": validate_ical,
+                "future_only": future_only,
+                "categories": categories,
+            },
+        )
 
     stats: dict[str, Any] = {
         "source_id": source.id,
@@ -614,6 +632,7 @@ def main() -> None:
     )
     add_common_args(parser)
     add_pagination_args(parser)
+    add_feed_args(parser)
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -628,6 +647,9 @@ def main() -> None:
             source,
             delay=args.delay,
             max_pages=args.max_pages,
+            validate_ical=args.validate_ical,
+            future_only=args.future_only,
+            categories=args.categories,
             dry_run=args.dry_run,
         )
 

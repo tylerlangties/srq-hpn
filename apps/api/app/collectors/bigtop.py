@@ -28,6 +28,7 @@ from app.models.source import Source
 from .utils import (
     add_common_args,
     add_feed_args,
+    add_pagination_args,
     get_http_session,
     upsert_source_feed,
     validate_ical_url,
@@ -166,6 +167,7 @@ def run_collector(
     source: Source,
     *,
     delay: float = 0.25,
+    max_pages: int = 10,
     validate_ical: bool = False,
     future_only: bool = False,
     created_months: int | None = None,
@@ -199,8 +201,15 @@ def run_collector(
             "future_only": future_only,
             "created_cutoff": created_cutoff.isoformat() if created_cutoff else None,
             "delay": delay,
+            "max_pages": max_pages,
         },
     )
+
+    if max_pages != 10:
+        logger.info(
+            "--max-pages is accepted but not used by this collector",
+            extra={"source_id": source.id, "max_pages": max_pages},
+        )
 
     stats: dict[str, Any] = {
         "source_id": source.id,
@@ -387,6 +396,7 @@ def main() -> None:
         description="Collect Big Top Brewing events via GraphQL and populate source_feeds"
     )
     add_common_args(parser, default_delay=0.25)
+    add_pagination_args(parser)
     add_feed_args(parser)
     parser.add_argument(
         "--created-months",
@@ -411,6 +421,7 @@ def main() -> None:
             db,
             source,
             delay=args.delay,
+            max_pages=args.max_pages,
             validate_ical=args.validate_ical,
             future_only=args.future_only,
             created_months=args.created_months,

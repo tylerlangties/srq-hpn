@@ -22,6 +22,7 @@ from app.models.source import Source
 from .utils import (
     add_common_args,
     add_feed_args,
+    add_pagination_args,
     get_http_session,
     upsert_source_feed,
     validate_ical_url,
@@ -104,7 +105,10 @@ def run_collector(
     source: Source,
     *,
     months_ahead: int = 2,
+    max_pages: int = 10,
     validate_ical: bool = False,
+    future_only: bool = False,
+    categories: str | None = None,
     dry_run: bool = False,
     delay: float = 0.5,
 ) -> dict[str, Any]:
@@ -118,10 +122,23 @@ def run_collector(
         extra={
             "source_id": source.id,
             "months_ahead": months_ahead,
+            "max_pages": max_pages,
             "dry_run": dry_run,
             "validate_ical": validate_ical,
+            "future_only": future_only,
+            "categories": categories,
         },
     )
+
+    if max_pages != 10 or future_only:
+        logger.info(
+            "Some standardized collector flags are accepted but not used by this collector",
+            extra={
+                "source_id": source.id,
+                "max_pages": max_pages,
+                "future_only": future_only,
+            },
+        )
 
     stats: dict[str, Any] = {
         "source_id": source.id,
@@ -174,6 +191,7 @@ def run_collector(
                 external_id=external_id,
                 page_url=entry.page_url,
                 ical_url=entry.ical_url,
+                categories=categories,
                 dry_run=dry_run,
             )
             stats["feeds_upserted"] += 1
@@ -235,6 +253,7 @@ def main() -> None:
         description="Collect Mote Marine monthly iCal feeds"
     )
     add_common_args(parser)
+    add_pagination_args(parser)
     add_feed_args(parser)
     parser.add_argument(
         "--months-ahead",
@@ -255,7 +274,10 @@ def main() -> None:
             db,
             source,
             months_ahead=args.months_ahead,
+            max_pages=args.max_pages,
             validate_ical=args.validate_ical,
+            future_only=args.future_only,
+            categories=args.categories,
             dry_run=args.dry_run,
             delay=args.delay,
         )

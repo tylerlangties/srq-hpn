@@ -6,7 +6,7 @@
 #   cd apps/api
 #   bash scripts/run_all_collectors.sh
 #
-# Each collector runs with --delay 2 and --future-only where supported.
+# Each collector runs with --delay 2 and --future-only.
 # The script tracks pass/fail per collector and prints a summary at the end.
 # ---------------------------------------------------------------------------
 
@@ -82,20 +82,20 @@ echo -e "Time: $(date '+%Y-%m-%d %H:%M:%S')"
 
 OVERALL_START=$(date +%s)
 
-# 1. Van Wezel (no --future-only flag available)
+# 1. Van Wezel
 run_collector "Van Wezel Performing Arts Hall" \
     app.collectors.vanwezel \
-    --source-id 1 --delay "$DELAY"
+    --source-id 1 --delay "$DELAY" --future-only
 
 # 2. Mote Marine (feed-based, has --future-only)
 run_collector "Mote Marine Laboratory and Aquarium" \
     app.collectors.mote \
     --source-id 2 --delay "$DELAY" --future-only
 
-# 3. ArtFestival.com (no --future-only flag available)
+# 3. ArtFestival.com
 run_collector "ArtFestival.com" \
     app.collectors.artfestival \
-    --source-id 3 --delay "$DELAY"
+    --source-id 3 --delay "$DELAY" --future-only
 
 # 4. Asolo Repertory Theatre (has --future-only)
 run_collector "Asolo Repertory Theatre" \
@@ -112,10 +112,10 @@ run_collector "Big Waters Land Trust" \
     app.collectors.bigwaters \
     --source-id 6 --delay "$DELAY"
 
-# 7. Sarasota Fair (no --future-only flag available)
+# 7. Sarasota Fair
 run_collector "Sarasota Fair" \
     app.collectors.sarasotafair \
-    --source-id 7 --delay "$DELAY"
+    --source-id 7 --delay "$DELAY" --future-only
 
 # 8. Selby Gardens (feed-based, has --future-only)
 run_collector "Selby Gardens" \

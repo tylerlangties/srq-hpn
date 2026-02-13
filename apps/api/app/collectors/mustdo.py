@@ -73,7 +73,7 @@ def extract_event_pages(html: str, *, base_url: str) -> set[str]:
 
     for a in soup.select("a[href]"):
         href = a.get("href")
-        if not href:
+        if not isinstance(href, str) or not href:
             continue
         abs_url = urljoin(base_url, href)
 
@@ -95,17 +95,20 @@ def find_next_page(html: str, *, base_url: str) -> str | None:
     soup = BeautifulSoup(html, "html.parser")
 
     a = soup.find("a", attrs={"rel": "next"})
-    if a and a.get("href"):
-        return urljoin(base_url, a["href"])
+    href = a.get("href") if a else None
+    if isinstance(href, str) and href:
+        return urljoin(base_url, href)
 
     a = soup.select_one("a.next, a.next.page-numbers, .pagination a.next")
-    if a and a.get("href"):
-        return urljoin(base_url, a["href"])
+    href = a.get("href") if a else None
+    if isinstance(href, str) and href:
+        return urljoin(base_url, href)
 
     for a in soup.select("a[href]"):
         txt = (a.get_text() or "").strip().lower()
-        if txt in {"next", "next »", "older posts"}:
-            return urljoin(base_url, a["href"])
+        href = a.get("href")
+        if txt in {"next", "next »", "older posts"} and isinstance(href, str) and href:
+            return urljoin(base_url, href)
 
     return None
 
@@ -122,6 +125,8 @@ def run_collector(
     max_pages: int = 10,
     delay: float = 1.0,
     validate_ical: bool = False,
+    future_only: bool = False,
+    categories: str | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     """
@@ -142,8 +147,16 @@ def run_collector(
             "delay": delay,
             "dry_run": dry_run,
             "validate_ical": validate_ical,
+            "future_only": future_only,
+            "categories": categories,
         },
     )
+
+    if future_only:
+        logger.info(
+            "--future-only is accepted but not used by this collector",
+            extra={"source_id": source.id},
+        )
 
     stats: dict[str, Any] = {
         "source_id": source.id,
@@ -241,6 +254,7 @@ def run_collector(
                 external_id=external_id,
                 page_url=event_page,
                 ical_url=ical_url,
+                categories=categories,
                 dry_run=dry_run,
             )
             stats["events_upserted"] += 1
@@ -327,6 +341,8 @@ def main() -> None:
             max_pages=args.max_pages,
             delay=args.delay,
             validate_ical=args.validate_ical,
+            future_only=args.future_only,
+            categories=args.categories,
             dry_run=args.dry_run,
         )
 
