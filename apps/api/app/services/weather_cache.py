@@ -27,6 +27,10 @@ WEATHER_LONGITUDE = float(os.getenv("WEATHER_LONGITUDE", "-82.5307"))
 WEATHER_CACHE_TTL_HOURS = int(os.getenv("WEATHER_CACHE_TTL_HOURS", "6"))
 WEATHER_DAILY_FETCH_CAP = int(os.getenv("WEATHER_DAILY_FETCH_CAP", "25"))
 WEATHER_RETENTION_DAYS = int(os.getenv("WEATHER_RETENTION_DAYS", "10"))
+WEATHER_FETCH_COUNTER_RETENTION_DAYS = int(
+    os.getenv("WEATHER_FETCH_COUNTER_RETENTION_DAYS", "45")
+)
+REQUIRED_WEATHER_SLOTS = ("today", "tomorrow", "weekend")
 
 
 @dataclass(frozen=True)
@@ -89,19 +93,14 @@ def _extract_requested_dates(payload: WeatherPayloadData) -> set[date]:
 
 
 def _payload_from_reports(
-    reports_by_date: dict[date, WeatherReport],
+    reports_by_slot: dict[str, WeatherReport],
 ) -> WeatherPayloadData | None:
-    if len(reports_by_date) < 3:
+    if not all(slot in reports_by_slot for slot in REQUIRED_WEATHER_SLOTS):
         return None
 
-    sorted_dates = sorted(reports_by_date.keys())
-    today_date = sorted_dates[0]
-    tomorrow_date = sorted_dates[1]
-    weekend_date = next((d for d in sorted_dates if d.weekday() == 5), sorted_dates[2])
-
-    today_payload = reports_by_date.get(today_date)
-    tomorrow_payload = reports_by_date.get(tomorrow_date)
-    weekend_payload = reports_by_date.get(weekend_date)
+    today_payload = reports_by_slot.get("today")
+    tomorrow_payload = reports_by_slot.get("tomorrow")
+    weekend_payload = reports_by_slot.get("weekend")
 
     if not today_payload or not tomorrow_payload or not weekend_payload:
         return None
@@ -199,11 +198,16 @@ def _store_payload_snapshot(
 ) -> None:
     expires_at = now + timedelta(hours=WEATHER_CACHE_TTL_HOURS)
 
-    for summary in (payload.today, payload.tomorrow, payload.weekend):
+    for slot, summary in (
+        ("today", payload.today),
+        ("tomorrow", payload.tomorrow),
+        ("weekend", payload.weekend),
+    ):
         db.add(
             WeatherReport(
                 provider=provider,
                 location_key=location_key,
+                slot=slot,
                 forecast_date=date.fromisoformat(summary.date),
                 payload_json={
                     "date": summary.date,
@@ -235,15 +239,15 @@ def get_weather_payload(
         .where(WeatherReport.location_key == location_key)
         .where(WeatherReport.expires_at > now)
         .order_by(WeatherReport.fetched_at.desc())
-        .limit(3)
+        .limit(24)
     )
     fresh_reports = db.scalars(fresh_stmt).all()
 
-    fresh_by_date: dict[date, WeatherReport] = {}
+    fresh_by_slot: dict[str, WeatherReport] = {}
     for report in fresh_reports:
-        fresh_by_date.setdefault(report.forecast_date, report)
+        fresh_by_slot.setdefault(report.slot, report)
 
-    payload = _payload_from_reports(fresh_by_date)
+    payload = _payload_from_reports(fresh_by_slot)
     if payload is not None and not force_refresh:
         logger.info(
             "weather_cache_hit",
@@ -294,14 +298,14 @@ def get_weather_payload(
         .where(WeatherReport.provider == provider)
         .where(WeatherReport.location_key == location_key)
         .order_by(WeatherReport.fetched_at.desc())
-        .limit(12)
+        .limit(36)
     )
     stale_reports = db.scalars(stale_stmt).all()
-    stale_by_date: dict[date, WeatherReport] = {}
+    stale_by_slot: dict[str, WeatherReport] = {}
     for report in stale_reports:
-        stale_by_date.setdefault(report.forecast_date, report)
+        stale_by_slot.setdefault(report.slot, report)
 
-    stale_payload = _payload_from_reports(stale_by_date)
+    stale_payload = _payload_from_reports(stale_by_slot)
     if stale_payload is not None:
         logger.warning(
             "weather_serving_stale_cache",
@@ -339,6 +343,20 @@ def prune_old_weather_reports(db: Session) -> int:
     )
     delete_count = db.scalar(count_stmt) or 0
     stmt = delete(WeatherReport).where(WeatherReport.fetched_at < cutoff)
+    db.execute(stmt)
+    db.commit()
+    return delete_count
+
+
+def prune_old_weather_fetch_counters(db: Session) -> int:
+    cutoff = datetime.now(UTC).astimezone(SRQ_TZ).date() - timedelta(
+        days=WEATHER_FETCH_COUNTER_RETENTION_DAYS
+    )
+    count_stmt = select(func.count(WeatherFetchCounter.id)).where(
+        WeatherFetchCounter.day < cutoff
+    )
+    delete_count = db.scalar(count_stmt) or 0
+    stmt = delete(WeatherFetchCounter).where(WeatherFetchCounter.day < cutoff)
     db.execute(stmt)
     db.commit()
     return delete_count

@@ -21,6 +21,9 @@ wrappers that provide Celery integration (retries, scheduling, result tracking).
 from __future__ import annotations
 
 import logging
+import os
+import random
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -31,9 +34,16 @@ from app.celery_app import app
 from app.db import SessionLocal
 from app.models.source import Source
 from app.services.ingest_source_items import ingest_source_items
-from app.services.weather_cache import prune_old_weather_reports, refresh_weather_cache
+from app.services.weather_cache import (
+    prune_old_weather_fetch_counters,
+    prune_old_weather_reports,
+    refresh_weather_cache,
+)
 
 logger = logging.getLogger(__name__)
+WEATHER_REFRESH_JITTER_MAX_SECONDS = int(
+    os.getenv("WEATHER_REFRESH_JITTER_MAX_SECONDS", "180")
+)
 
 
 # =============================================================================
@@ -357,12 +367,34 @@ def refresh_weather(self) -> dict[str, Any]:
 
     db = SessionLocal()
     try:
+        jitter_seconds = 0
+        if WEATHER_REFRESH_JITTER_MAX_SECONDS > 0:
+            jitter_seconds = random.randint(0, WEATHER_REFRESH_JITTER_MAX_SECONDS)
+            if jitter_seconds > 0:
+                logger.info(
+                    "Applying weather refresh jitter",
+                    extra={
+                        "task_id": self.request.id,
+                        "jitter_seconds": jitter_seconds,
+                    },
+                )
+                time.sleep(jitter_seconds)
+
         result = refresh_weather_cache(db)
         logger.info(
             "Weather cache refresh task completed",
-            extra={"task_id": self.request.id, **result},
+            extra={
+                "task_id": self.request.id,
+                "jitter_seconds": jitter_seconds,
+                **result,
+            },
         )
-        return {"task_id": self.request.id, "status": "success", **result}
+        return {
+            "task_id": self.request.id,
+            "status": "success",
+            "jitter_seconds": jitter_seconds,
+            **result,
+        }
     except Exception as exc:
         db.rollback()
         logger.error(
@@ -397,6 +429,36 @@ def prune_weather_reports(self) -> dict[str, Any]:
         db.rollback()
         logger.error(
             "Weather report prune task failed",
+            extra={"task_id": self.request.id, "error": f"{type(exc).__name__}: {exc}"},
+            exc_info=True,
+        )
+        raise
+    finally:
+        db.close()
+
+
+@app.task(bind=True)
+def prune_weather_fetch_counters_task(self) -> dict[str, Any]:
+    logger.info(
+        "Starting weather fetch counter prune task", extra={"task_id": self.request.id}
+    )
+
+    db = SessionLocal()
+    try:
+        deleted_rows = prune_old_weather_fetch_counters(db)
+        logger.info(
+            "Weather fetch counter prune task completed",
+            extra={"task_id": self.request.id, "deleted_rows": deleted_rows},
+        )
+        return {
+            "task_id": self.request.id,
+            "status": "success",
+            "deleted_rows": deleted_rows,
+        }
+    except Exception as exc:
+        db.rollback()
+        logger.error(
+            "Weather fetch counter prune task failed",
             extra={"task_id": self.request.id, "error": f"{type(exc).__name__}: {exc}"},
             exc_info=True,
         )

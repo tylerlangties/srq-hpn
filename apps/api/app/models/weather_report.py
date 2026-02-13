@@ -12,11 +12,19 @@ class WeatherReport(Base):
     __tablename__ = "weather_reports"
     __table_args__ = (
         Index(
-            "ix_weather_reports_provider_location_date_exp",
+            "ix_weather_reports_provider_location_exp_fetch",
             "provider",
             "location_key",
-            "forecast_date",
             "expires_at",
+            "fetched_at",
+        ),
+        Index(
+            "ix_weather_reports_provider_location_slot_exp_fetch",
+            "provider",
+            "location_key",
+            "slot",
+            "expires_at",
+            "fetched_at",
         ),
         Index("ix_weather_reports_fetched_at", "fetched_at"),
     )
@@ -24,6 +32,7 @@ class WeatherReport(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     location_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    slot: Mapped[str] = mapped_column(String(32), nullable=False)
     forecast_date: Mapped[date] = mapped_column(Date, nullable=False)
     payload_json: Mapped[dict] = mapped_column(JSON, nullable=False)
     fetched_at: Mapped[datetime] = mapped_column(

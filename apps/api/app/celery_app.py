@@ -106,7 +106,7 @@ app.conf.beat_schedule = {
     # Weather Cache Tasks
     # ---------------------------------------------------------------------
     # Refresh weather cache every 6 hours to keep forecast reasonably current
-    # while staying under free-tier API limits.
+    # while staying under free-tier API limits. Task-level jitter spreads calls.
     "refresh-weather-cache": {
         "task": "app.tasks.refresh_weather",
         "schedule": crontab(minute="5", hour="*/6"),
@@ -115,6 +115,11 @@ app.conf.beat_schedule = {
     "prune-weather-reports": {
         "task": "app.tasks.prune_weather_reports",
         "schedule": crontab(minute="20", hour="2"),
+    },
+    # Prune weather fetch counters to keep guardrail tracking table compact.
+    "prune-weather-fetch-counters": {
+        "task": "app.tasks.prune_weather_fetch_counters_task",
+        "schedule": crontab(minute="40", hour="2"),
     },
 }
 

@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -14,14 +14,10 @@ router = APIRouter(prefix="/api/weather", tags=["weather"])
 
 @router.get("", response_model=WeatherPayloadOut)
 def weather_summary(
-    force_refresh: bool = Query(
-        default=False,
-        description="Force a provider fetch if daily cap allows.",
-    ),
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
     try:
-        payload = get_weather_payload(db, force_refresh=force_refresh)
+        payload = get_weather_payload(db)
     except RuntimeError as exc:
         logger.error("weather_data_unavailable", exc_info=True)
         raise HTTPException(status_code=503, detail="Weather data unavailable") from exc
