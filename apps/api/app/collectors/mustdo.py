@@ -222,6 +222,7 @@ def run_collector(
     if not all_events:
         logger.warning("No events found", extra={"source_id": source.id})
         stats["status"] = "success"
+        logger.info("MustDo collector completed", extra=stats)
         return stats
 
     # Phase 2: Upsert source feeds

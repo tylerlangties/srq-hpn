@@ -282,6 +282,7 @@ def run_collector(
     if not events:
         logger.warning("No events found", extra={"source_id": source.id})
         stats["status"] = "success"
+        logger.info("Selby Gardens collector completed", extra=stats)
         return stats
 
     dry_run_items: list[dict[str, Any]] = []

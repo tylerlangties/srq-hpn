@@ -458,6 +458,7 @@ def run_collector(
     if not shows:
         logger.warning("No shows found", extra={"source_id": source.id})
         stats["status"] = "success"
+        logger.info("Asolo Rep collector completed", extra=stats)
         return stats
 
     dry_run_items: list[dict[str, Any]] = []

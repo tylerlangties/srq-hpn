@@ -365,6 +365,7 @@ def run_collector(
     if not events:
         logger.warning("No events found", extra={"source_id": source.id})
         stats["status"] = "success"
+        logger.info("Big Waters collector completed", extra=stats)
         return stats
 
     now_utc = datetime.now(UTC)
@@ -496,11 +497,15 @@ def main() -> None:
             dry_run=args.dry_run,
         )
 
-    except Exception:
+    except Exception as e:
         db.rollback()
         logger.critical(
             "Fatal error in collector",
-            extra={"source_id": args.source_id},
+            extra={
+                "source_id": args.source_id,
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+            },
             exc_info=True,
         )
         raise

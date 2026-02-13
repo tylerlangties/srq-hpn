@@ -237,6 +237,7 @@ def run_collector(
     if not events:
         logger.warning("No events found", extra={"source_id": source.id})
         stats["status"] = "success"
+        logger.info("Big Top Brewing collector completed", extra=stats)
         return stats
 
     # Client-side filtering by createdAt (no HTTP requests)

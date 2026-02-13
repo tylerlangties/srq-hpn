@@ -142,7 +142,7 @@ def extract_event_links_from_calendar(html: str) -> list[dict[str, Any]]:
             continue
 
         href = link.get("href", "")
-        if not href:
+        if not isinstance(href, str) or not href:
             continue
 
         full_url = urljoin(BASE_URL, href)
@@ -195,13 +195,16 @@ def extract_event_links_from_calendar(html: str) -> list[dict[str, Any]]:
 def find_next_page_url(html: str, current_url: str) -> str | None:
     soup = BeautifulSoup(html, "html.parser")
 
-    next_link = soup.find("a", string=re.compile(r"next", re.I))
-    if next_link and next_link.get("href"):
-        return urljoin(current_url, next_link["href"])
+    for candidate in soup.select("a[href]"):
+        text = candidate.get_text(" ", strip=True).lower()
+        href = candidate.get("href")
+        if "next" in text and isinstance(href, str) and href:
+            return urljoin(current_url, href)
 
     next_link = soup.find("a", rel="next")
-    if next_link and next_link.get("href"):
-        return urljoin(current_url, next_link["href"])
+    href = next_link.get("href") if next_link else None
+    if isinstance(href, str) and href:
+        return urljoin(current_url, href)
 
     return None
 
@@ -253,15 +256,18 @@ def collect_event_detail(
         if not description:
             meta_desc = soup.find("meta", attrs={"name": "description"})
             if meta_desc:
-                content = meta_desc.get("content", "").strip()
-                if content:
-                    description = content
+                content_attr = meta_desc.get("content")
+                if isinstance(content_attr, str):
+                    content = content_attr.strip()
+                    if content:
+                        description = content
 
         # Extract location
         location = None
         maps_link = soup.find("a", href=re.compile(r"google.com/maps"))
         if maps_link:
-            href = maps_link.get("href", "")
+            href_attr = maps_link.get("href", "")
+            href = href_attr if isinstance(href_attr, str) else ""
             if "search/" in href:
                 addr_match = re.search(r"search/([^?]+)", href)
                 if addr_match:
@@ -555,6 +561,7 @@ def run_collector(
             print(f"    URL: {event['url']}")
             print()
         stats["status"] = "success"
+        logger.info("ArtFestival.com collector completed", extra=stats)
         return stats
 
     # Phase 2: Collect each event detail page
