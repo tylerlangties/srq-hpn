@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.user import UserRole
+
 
 class LoginRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=255)
@@ -12,5 +14,5 @@ class AuthUserOut(BaseModel):
     id: int
     email: str
     name: str | None = None
-    role: str
+    role: UserRole
     is_active: bool

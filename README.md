@@ -114,13 +114,19 @@ pnpm dev:web
 Admin routes are protected with role-based auth (`admin`, `user`) using a
 first-party httpOnly cookie.
 
-Set these API env vars in `apps/api/.env`
+Set these API env vars in your runtime env:
+
+- Docker dev (`compose.dev.yml`): `./.env.local`
+- API-only local runs (`pnpm dev:api`): `apps/api/.env` (or shell env)
 
 - `JWT_SECRET` (required)
 - `JWT_ALGORITHM` (optional, defaults to `HS256`)
 - `JWT_EXPIRES_MINUTES` (optional, defaults to `60`)
 - `COOKIE_SECURE` (optional, `true` in production)
 - `COOKIE_SAMESITE` (optional, defaults to `lax`)
+
+Production expects a same-origin deployment (frontend + `/api` behind a reverse
+proxy). Keep `COOKIE_SAMESITE=lax` and `COOKIE_SECURE=true`.
 
 Create your first admin user:
 

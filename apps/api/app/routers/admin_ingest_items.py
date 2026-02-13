@@ -6,12 +6,13 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_role
 from app.models.source import Source
+from app.models.user import UserRole
 from app.services.ingest_source_items import ingest_source_items
 
 router = APIRouter(
     prefix="/api/admin/ingest",
     tags=["admin-ingest"],
-    dependencies=[Depends(require_role("admin"))],
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
 )
 
 

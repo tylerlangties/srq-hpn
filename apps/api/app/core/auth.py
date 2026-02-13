@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Response
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+
+from app.models.user import UserRole
 
 AUTH_COOKIE_NAME = "srq_access_token"
 DEFAULT_JWT_ALGORITHM = "HS256"
@@ -17,7 +19,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def _jwt_secret() -> str:
     secret = os.getenv("JWT_SECRET")
-    if not secret:
+    if not secret or not secret.strip():
         raise RuntimeError("JWT_SECRET is not set")
     return secret
 
@@ -45,12 +47,13 @@ def _cookie_secure() -> bool:
     return raw.lower() in {"1", "true", "yes", "on"}
 
 
-def _cookie_samesite() -> str:
-    allowed = {"lax", "strict", "none"}
+def _cookie_samesite() -> Literal["lax", "strict", "none"]:
     value = os.getenv("COOKIE_SAMESITE", "lax").lower()
-    if value not in allowed:
-        return "lax"
-    return value
+    if value == "strict":
+        return "strict"
+    if value == "none":
+        return "none"
+    return "lax"
 
 
 def hash_password(password: str) -> str:
@@ -61,11 +64,15 @@ def verify_password(password: str, password_hash: str) -> bool:
     return pwd_context.verify(password, password_hash)
 
 
-def create_access_token(*, user_id: int, role: str) -> str:
+def validate_auth_config() -> None:
+    _jwt_secret()
+
+
+def create_access_token(*, user_id: int, role: UserRole) -> str:
     expire_at = datetime.now(UTC) + timedelta(minutes=_expires_minutes())
     payload = {
         "sub": str(user_id),
-        "role": role,
+        "role": str(role),
         "exp": int(expire_at.timestamp()),
         "iat": int(datetime.now(UTC).timestamp()),
     }

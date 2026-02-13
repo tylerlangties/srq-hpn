@@ -1,9 +1,15 @@
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import Boolean, DateTime, Index, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+
+
+class UserRole(StrEnum):
+    ADMIN = "admin"
+    USER = "user"
 
 
 class User(Base):
@@ -22,7 +28,11 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
+    role: Mapped[UserRole] = mapped_column(
+        String(20),
+        nullable=False,
+        default=UserRole.USER,
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)

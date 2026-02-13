@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import AUTH_COOKIE_NAME, decode_access_token
 from app.db import SessionLocal
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -42,7 +42,9 @@ def get_current_user(
     try:
         payload = decode_access_token(token)
         sub = payload.get("sub")
-        user_id = int(sub)
+        if sub is None or isinstance(sub, bool):
+            raise ValueError("Invalid token subject")
+        user_id = int(str(sub))
     except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -59,7 +61,7 @@ def get_current_user(
     return user
 
 
-def require_role(required_role: str):
+def require_role(required_role: UserRole):
     def _require_role(user: User = Depends(get_current_user)) -> User:
         if user.role != required_role:
             raise HTTPException(

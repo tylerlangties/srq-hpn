@@ -119,7 +119,7 @@ Tasks run automatically based on the schedule in `apps/api/app/celery_app.py`:
 
 ```python
 app.conf.beat_schedule = {
-    "scrape-vanwezel-daily": {
+    "collect-vanwezel-daily": {
         "task": "app.tasks.collect_vanwezel",
         "schedule": crontab(minute=0, hour=6),  # 6:00 AM daily
         "kwargs": {"source_id": 1},

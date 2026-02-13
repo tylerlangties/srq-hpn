@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import app.core.env  # noqa: F401
+from app.core.auth import validate_auth_config  # noqa: E402
 from app.core.logging import setup_logging  # noqa: E402
 from app.db import db_smoke_test  # noqa: E402
 from app.routers.admin import router as admin_router  # noqa: E402
@@ -17,6 +18,7 @@ from app.routers.venues import router as venues_router  # noqa: E402
 
 # Configure logging before creating the app
 setup_logging()
+validate_auth_config()
 
 app = FastAPI(title="SRQ Happenings API")
 

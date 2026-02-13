@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, require_role
 from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
+from app.models.user import UserRole
 from app.models.venue import Venue
 from app.models.venue_alias import VenueAlias
 from app.schemas.admin import (
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/api/admin/venues",
     tags=["admin"],
-    dependencies=[Depends(require_role("admin"))],
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
 )
 
 

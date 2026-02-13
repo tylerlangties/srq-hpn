@@ -5,7 +5,7 @@ import argparse
 import app.core.env  # noqa: F401
 from app.core.auth import hash_password
 from app.db import SessionLocal
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 def main() -> None:
@@ -27,7 +27,7 @@ def main() -> None:
             user = User(
                 email=email,
                 name=args.name,
-                role="admin",
+                role=UserRole.ADMIN,
                 is_active=True,
                 auth_provider="local",
                 password_hash=hash_password(args.password),
@@ -36,7 +36,7 @@ def main() -> None:
             action = "created"
         else:
             user.name = args.name if args.name is not None else user.name
-            user.role = "admin"
+            user.role = UserRole.ADMIN
             user.is_active = True
             user.auth_provider = "local"
             user.password_hash = hash_password(args.password)
