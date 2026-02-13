@@ -24,6 +24,24 @@ function formatWeatherLine(temp: number | null, condition: string) {
   return `${tempLabel} and ${condition}`;
 }
 
+function weatherSubtitle(
+  label: string,
+  temp: number | null,
+  condition: string,
+  loading: boolean,
+  error: string | null
+) {
+  if (error) {
+    return `${label} · Forecast took a beach day`;
+  }
+
+  if (loading) {
+    return `${label} · Weather loading`;
+  }
+
+  return `${label} · ${formatWeatherLine(temp, condition)}`;
+}
+
 function renderEventsSection(
   state: EventsState,
   loading: ReactNode,
@@ -68,23 +86,34 @@ export default function HomePage() {
 
   const featuredEvent = todayEvents.data?.[0] ?? null;
   const todaySubtitle = weather.data
-    ? `Today · ${formatWeatherLine(
+    ? weatherSubtitle(
+        "Today",
         weather.data.today.temp,
-        weather.data.today.condition
-      )}`
-    : "Today · Weather loading";
+        weather.data.today.condition,
+        weather.loading,
+        weather.error
+      )
+    : weatherSubtitle("Today", null, "pleasant", weather.loading, weather.error);
+
   const tomorrowSubtitle = weather.data
-    ? `Tomorrow · ${formatWeatherLine(
+    ? weatherSubtitle(
+        "Tomorrow",
         weather.data.tomorrow.temp,
-        weather.data.tomorrow.condition
-      )}`
-    : "Tomorrow · Weather loading";
+        weather.data.tomorrow.condition,
+        weather.loading,
+        weather.error
+      )
+    : weatherSubtitle("Tomorrow", null, "pleasant", weather.loading, weather.error);
+
   const weekendSubtitle = weather.data
-    ? `Weekend · ${formatWeatherLine(
+    ? weatherSubtitle(
+        "Weekend",
         weather.data.weekend.temp,
-        weather.data.weekend.condition
-      )}`
-    : "Weekend · Weather loading";
+        weather.data.weekend.condition,
+        weather.loading,
+        weather.error
+      )
+    : weatherSubtitle("Weekend", null, "pleasant", weather.loading, weather.error);
 
   return (
     <AppLayout showAmbient>

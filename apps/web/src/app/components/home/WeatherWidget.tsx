@@ -53,10 +53,10 @@ export default function WeatherWidget({ weather, loading, error }: Props) {
     return (
       <div className="relative rounded-3xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 p-6 shadow-2xl backdrop-blur-sm">
         <div className="text-sm text-muted dark:text-white/50">
-          Weather unavailable
+          The forecast took a beach day 🏖️
         </div>
         <p className="mt-2 text-xs text-muted dark:text-white/40">
-          We’ll update this card when the forecast is ready.
+          We&apos;ll reel it back in soon.
         </p>
       </div>
     );
