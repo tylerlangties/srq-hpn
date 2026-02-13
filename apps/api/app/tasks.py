@@ -31,6 +31,7 @@ from app.celery_app import app
 from app.db import SessionLocal
 from app.models.source import Source
 from app.services.ingest_source_items import ingest_source_items
+from app.services.weather_cache import prune_old_weather_reports, refresh_weather_cache
 
 logger = logging.getLogger(__name__)
 
@@ -346,3 +347,59 @@ def health_check() -> dict[str, Any]:
         "timestamp": datetime.now(UTC).isoformat(),
         "message": "Celery worker is running",
     }
+
+
+@app.task(bind=True)
+def refresh_weather(self) -> dict[str, Any]:
+    logger.info(
+        "Starting weather cache refresh task", extra={"task_id": self.request.id}
+    )
+
+    db = SessionLocal()
+    try:
+        result = refresh_weather_cache(db)
+        logger.info(
+            "Weather cache refresh task completed",
+            extra={"task_id": self.request.id, **result},
+        )
+        return {"task_id": self.request.id, "status": "success", **result}
+    except Exception as exc:
+        db.rollback()
+        logger.error(
+            "Weather cache refresh task failed",
+            extra={"task_id": self.request.id, "error": f"{type(exc).__name__}: {exc}"},
+            exc_info=True,
+        )
+        raise
+    finally:
+        db.close()
+
+
+@app.task(bind=True)
+def prune_weather_reports(self) -> dict[str, Any]:
+    logger.info(
+        "Starting weather report prune task", extra={"task_id": self.request.id}
+    )
+
+    db = SessionLocal()
+    try:
+        deleted_rows = prune_old_weather_reports(db)
+        logger.info(
+            "Weather report prune task completed",
+            extra={"task_id": self.request.id, "deleted_rows": deleted_rows},
+        )
+        return {
+            "task_id": self.request.id,
+            "status": "success",
+            "deleted_rows": deleted_rows,
+        }
+    except Exception as exc:
+        db.rollback()
+        logger.error(
+            "Weather report prune task failed",
+            extra={"task_id": self.request.id, "error": f"{type(exc).__name__}: {exc}"},
+            exc_info=True,
+        )
+        raise
+    finally:
+        db.close()

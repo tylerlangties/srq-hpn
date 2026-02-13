@@ -15,6 +15,7 @@ from app.routers.admin_venues import router as admin_venues_router  # noqa: E402
 from app.routers.auth import router as auth_router  # noqa: E402
 from app.routers.events import router as events_router  # noqa: E402
 from app.routers.venues import router as venues_router  # noqa: E402
+from app.routers.weather import router as weather_router  # noqa: E402
 
 # Configure logging before creating the app
 setup_logging()
@@ -42,6 +43,7 @@ app.add_middleware(
 )
 
 app.include_router(events_router)
+app.include_router(weather_router)
 app.include_router(venues_router)
 app.include_router(auth_router)
 app.include_router(admin_router)

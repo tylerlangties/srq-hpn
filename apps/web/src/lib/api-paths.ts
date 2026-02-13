@@ -15,6 +15,9 @@ export const API_PATHS = {
     detail: (eventId: number) => `/api/events/${eventId}`,
     resolve: (publicSlug: string) => `/api/events/resolve/${encodeURIComponent(publicSlug)}`,
   },
+  weather: {
+    summary: "/api/weather",
+  },
   venues: {
     list: "/api/venues",
     detail: (slug: string) => `/api/venues/${slug}`,

@@ -8,6 +8,8 @@ from .source_fetch_run import SourceFetchRun
 from .user import User, UserRole
 from .venue import Venue
 from .venue_alias import VenueAlias  # noqa: F401
+from .weather_fetch_counter import WeatherFetchCounter
+from .weather_report import WeatherReport
 
 __all__ = [
     "Source",
@@ -21,4 +23,6 @@ __all__ = [
     "EventOccurrence",
     "EventCategory",
     "VenueAlias",
+    "WeatherReport",
+    "WeatherFetchCounter",
 ]

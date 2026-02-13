@@ -82,14 +82,14 @@ app.conf.beat_schedule = {
     # Runs daily at 6:00 AM Eastern
     "collect-vanwezel-daily": {
         "task": "app.tasks.collect_vanwezel",
-        "schedule": crontab(minute=0, hour=6),
+        "schedule": crontab(minute="0", hour="6"),
         "kwargs": {"source_id": 1},  # Update this to your actual source ID
     },
     # Mote Marine: Source feed scraper (discovers iCal URLs)
     # Runs daily at 6:15 AM Eastern
     "collect-mote-daily": {
         "task": "app.tasks.collect_mote",
-        "schedule": crontab(minute=15, hour=6),
+        "schedule": crontab(minute="15", hour="6"),
         "kwargs": {"source_id": 2},  # Update this to your actual source ID
     },
     # ---------------------------------------------------------------------
@@ -100,7 +100,21 @@ app.conf.beat_schedule = {
     # Runs daily at 6:30 AM Eastern (after scrapers have discovered new feeds)
     "ingest-all-sources-daily": {
         "task": "app.tasks.ingest_all_sources",
-        "schedule": crontab(minute=30, hour=6),
+        "schedule": crontab(minute="30", hour="6"),
+    },
+    # ---------------------------------------------------------------------
+    # Weather Cache Tasks
+    # ---------------------------------------------------------------------
+    # Refresh weather cache every 6 hours to keep forecast reasonably current
+    # while staying under free-tier API limits.
+    "refresh-weather-cache": {
+        "task": "app.tasks.refresh_weather",
+        "schedule": crontab(minute="5", hour="*/6"),
+    },
+    # Prune weather snapshots beyond retention window.
+    "prune-weather-reports": {
+        "task": "app.tasks.prune_weather_reports",
+        "schedule": crontab(minute="20", hour="2"),
     },
 }
 
