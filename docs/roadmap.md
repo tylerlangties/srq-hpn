@@ -1,339 +1,189 @@
 ---
-name: SRQ Happenings 7-Step Roadmap
-overview: A phased plan to add a Decap CMS workflow, automate scraping with Celery, clean up and dockerize the stack, fix and add pages (venue, event detail), implement categories/filtering and "Surprise me", set up SEO and analytics, then define deployment and a long-term sprint for auth, newsletter, organizers, and data improvements.
+name: SRQ Happenings Launch Roadmap (Updated)
+overview: Launch-optimized roadmap with completed work checked off, current gaps prioritized, and post-launch initiatives preserved as the final step.
 todos: []
+updated: 2026-02-14
 ---
 
-# SRQ Happenings: 7-Step Roadmap
+# SRQ Happenings: Launch Roadmap (Updated)
 
-This plan expands your high-level steps into concrete tasks, file touchpoints, and decisions. Each step can be tackled in order; you do not need to complete everything at once.
-
----
-
-## Current state (from codebase)
-
-- **Monorepo**: `apps/api` (FastAPI), `apps/web` (Next.js 16), `compose.db.yml` (Postgres only).
-- **Articles**: Hardcoded in [apps/web/src/app/components/home/ArticlesSection.tsx](apps/web/src/app/components/home/ArticlesSection.tsx) (`MOCK_ARTICLES`); articles page reuses same section.
-- **Hero**: [apps/web/src/app/components/home/HeroSection.tsx](apps/web/src/app/components/home/HeroSection.tsx) shows static "42 Events this week" and "Surprise me" links to `/events` (no backend).
-- **Events API**: [apps/api/app/routers/events.py](apps/api/app/routers/events.py) has `/day` and `/range` only; no count endpoint, no single-event by id/slug, no category/filter query params.
-- **Venue page**: [apps/web/src/app/venues/[slug]/page.tsx](apps/web/src/app/venues/[slug]/page.tsx) is a client component that uses `params.slug`; in Next.js 15+, `params` is a Promise in dynamic routes, so destructuring `params.slug` synchronously can break (likely cause of "never worked").
-- **Event cards**: [apps/web/src/app/components/home/EventCardLarge.tsx](apps/web/src/app/components/home/EventCardLarge.tsx) links to `event.event.external_url` or `/events`—no internal event detail page.
-- **Scrapers**: [apps/api/scripts/](apps/api/scripts/) (e.g. `scrape_selby.py`, `scrape_bigtop.py`, `scrape_mustdo.py`) have inconsistent CLI args (e.g. Selby has `--filters`, `--list-categories`, `--future-only`; MustDo has no `--categories` or `--future-only`; BigTop has no `--max-pages`).
-- **Admin**: [apps/api/app/routers/admin.py](apps/api/app/routers/admin.py), `admin_venues`, `admin_ingest_items` are mounted with no auth.
-- **Categories**: DB has `categories`, `event_categories` and `SourceFeed.categories` (string); events API does not expose or filter by category.
-- **Footer**: [apps/web/src/app/components/Footer.tsx](apps/web/src/app/components/Footer.tsx) category links (Music, Arts & Culture, etc.) all go to `/events` with no query params.
-- **Submit**: [apps/web/src/app/submit/page.tsx](apps/web/src/app/submit/page.tsx) uses `mailto:` only; no API or admin list.
+This roadmap replaces stale assumptions with current implementation status, marks completed items, and re-orders remaining work for fastest path to launch.
 
 ---
 
-## Step 1: CMS (Decap), hosting, and scraping automation
+## Current status snapshot (from codebase)
 
-**Goal:** Add Decap CMS to the monorepo, serve real articles to the frontend, and plan hosting + Celery so scraping can run on a schedule.
+### Completed foundations
 
-### 1.1 Add Decap CMS to the monorepo
+- [x] Monorepo structure in place (`apps/api`, `apps/web`), with Docker dev and prod compose files.
+- [x] Articles are content-backed (markdown files + loader + list/detail pages), no longer mock-only.
+- [x] Celery app and task scaffolding exist with scheduled jobs in dev.
+- [x] Admin auth and roles are implemented (login/logout/me, protected admin routes).
+- [x] Event detail page and API flow exist, including canonical route resolution.
+- [x] "Events this week" count endpoint exists and is wired to homepage hero.
+- [x] Category models and ingestion category assignment logic exist.
 
-- Add Decap CMS in `apps/web` (or `apps/cms` if you prefer a dedicated app) using a Git-based backend (GitHub or GitLab) so content is stored as markdown/JSON in the repo.
-- Define an **articles collection** aligned to the frontend expectations: title, excerpt, category, readTime, image, optional slug, publishedAt, and body.
-- Create a content folder (e.g. `apps/web/content/articles/`) and add a few sample entries so the frontend can be wired end-to-end.
-- Note: Strapi can still be introduced later as a separate step if you decide you want a hosted database-backed CMS.
+### Partially complete / launch gaps
 
-### 1.2 Connect frontend to Decap content
+- [x] Venue dynamic route reliability fix for Next.js async params handling.
+- [ ] Category API and end-to-end category filtering (API + UI + footer links).
+- [ ] "Surprise me" endpoint and CTA behavior (currently links to `/events`).
+- [ ] Sitemap, robots, and structured data (JSON-LD) for SEO completeness.
+- [ ] Analytics integration (PostHog) and launch event instrumentation.
+- [ ] CI/CD workflows for repeatable checks and deploy readiness.
+- [ ] Production background job strategy parity (prod compose currently does not include Redis/Celery worker/beat).
 
-- **Environment**: Add `NEXT_PUBLIC_DECAP_BACKEND` (optional) or document Git credentials setup for Decap (Netlify Identity if hosted there, or GitHub OAuth when self-hosted).
-- **Data fetching**: Add a small content loader (e.g. in `apps/web/src/lib/content.ts`) to read markdown/JSON from the content folder at build time. Map front matter to the current `Article` type used by `ArticlesSection`.
-- **Replace mock data**: In [apps/web/src/app/components/home/ArticlesSection.tsx](apps/web/src/app/components/home/ArticlesSection.tsx), remove `MOCK_ARTICLES` and load articles from the content folder. On [apps/web/src/app/articles/page.tsx](apps/web/src/app/articles/page.tsx), list all articles from content; add a dynamic route `articles/[slug]` that renders markdown for the full article.
-- **Images**: Store images in a public or content-managed folder (e.g. `apps/web/public/uploads/`) and reference them from front matter; use Next.js image component as needed.
+### De-prioritized before launch
 
-### 1.3 Hosting and runbooks
-
-- **Where to run**: Decide where API and Web will run, and how Decap admin will be hosted (e.g. within the web app at `/cms`). Keep the existing `/admin` for event management to avoid route conflicts. Document required env vars and Git auth setup.
-- **Docker (optional in Step 1)**: No extra CMS container is needed for Decap. If Strapi is added later, include it in Docker in Step 2 when you dockerize the rest.
-
-### 1.4 Automation (Celery) – design and prep
-
-- **Broker**: Choose a broker (Redis or RabbitMQ). Redis is simple and often used with Celery.
-- **API app**: Add `celery` to [apps/api/requirements.txt](apps/api/requirements.txt) (or pyproject.toml). Create a Celery app (e.g. `app/celery_app.py`) that loads the same config as the FastAPI app (DB, env) and registers tasks.
-- **Tasks**: Create one task per scraper (or one generic task that accepts source_id + scraper type) that calls the existing scraper logic (e.g. subprocess or in-process import). Schedule these via Celery Beat (cron-like) so each source runs on a defined schedule (e.g. daily).
-- **Scope for Step 1**: Implement the Celery app and one example task (e.g. "run Selby scraper for source_id X") and document how to run worker + beat. Full parity for all scrapers can be done in Step 2 when you unify scraper interfaces.
-
-**Deliverables:** Decap CMS wired to content in repo, frontend showing real articles; hosting notes; Celery app + one scraper task + scheduling docs.
+- [ ] Full organizer/auth/newsletter ecosystem and advanced personalization (kept in final step).
 
 ---
 
-## Step 2: Code cleanup, consolidation, Docker, admin auth, "events this week"
+## Step 1: Launch blockers (stability and correctness)
 
-**Goal:** Consistent scrapers, full Docker setup, protect admin, and real "events this week" count.
+**Goal:** Remove known route/runtime risks so core browsing works reliably on launch day.
 
-### 2.1 Scraper interface and logging
+- [x] Fix venue route params handling in `apps/web/src/app/venues/[slug]/page.tsx` to follow current Next.js dynamic route conventions.
+- [x] Verify venue 404/empty states and ensure they are clear and navigable.
+- [x] Smoke-check event detail canonical redirects/route resolution behavior in `apps/web/src/app/events/[slug]/page.tsx` and API resolver.
 
-- **Unified CLI contract**: Define a common set of arguments all scrapers must support (e.g. `--source-id`, `--dry-run`, `--delay`, `--max-pages` where applicable, `--validate-ical`, `--future-only`, `--categories`). Document this in a short `apps/api/scripts/README.md`.
-- **Implementation**: For each scraper in [apps/api/scripts/](apps/api/scripts/), add the missing flags and normalize names (e.g. `--validate-ical` everywhere). Where a flag doesn't apply (e.g. `--max-pages` for a single-page source), accept the arg and no-op or document "N/A".
-- **Logging and errors**: Use the existing `app.core.logging` pattern consistently; ensure all scrapers log start/end, counts, and errors with structured extra fields. On fatal errors, exit with non-zero and log a clear message so Celery can detect failure.
-
-### 2.2 UI and event cards
-
-- **Event card sizes**: Audit [EventCardLarge](apps/web/src/app/components/home/EventCardLarge.tsx), [EventCardCompact](apps/web/src/app/components/home/EventCardCompact.tsx), and [FeaturedEventCard](apps/web/src/app/components/home/FeaturedEventCard.tsx). Standardize min/max heights or grid behavior (e.g. same aspect or fixed min-height) so cards in grids don't look inconsistent. Consider a single shared base component or shared class names for layout.
-- **General UI pass**: Quick pass on spacing, responsive breakpoints, and dark mode so events list and home sections feel consistent.
-
-### 2.3 Dockerize the full app
-
-- **Compose**: Extend [compose.db.yml](compose.db.yml) (or add `compose.yml`) to include:
-  - **api**: Build from `apps/api`, depend on `db`, env for `DATABASE_URL`.
-  - **web**: Build from `apps/web`, env for `NEXT_PUBLIC_API_BASE_URL` (and Decap admin config if needed).
-  - **cms**: Only if/when you add Strapi later; otherwise no extra container required for Decap.
-  - **redis** (if used for Celery).
-  - **celery_worker** and **celery_beat** (optional; can be added when you're ready to run them in Docker).
-- **Dockerfiles**: Add `Dockerfile` in `apps/api` and `apps/web` (multi-stage if desired). If Strapi is added later, follow its Docker docs for `apps/cms`.
-- **Documentation**: Add a "Run with Docker" section to the main README: `docker compose up`, required env file, and how to run migrations for API (and Strapi if added).
-
-### 2.4 Admin auth and roles
-
-- **Strategy**: Use a simple auth layer that can later support "roles" (e.g. admin vs viewer). Options: JWT issued by the API, or HTTP Basic Auth for a first version. Prefer JWT if you plan to add a proper login UI in the admin frontend.
-- **Implementation**:
-  - Add a dependency in [apps/api/app/api/deps.py](apps/api/app/api/deps.py) that reads Bearer token (or Basic), validates it, and optionally loads a user/role.
-  - Create a minimal `users` (or `admin_users`) table if you don't have one: id, email, password hash, role (e.g. `admin`).
-  - Protect all routes under `admin_router`, `admin_venues_router`, and `admin_ingest_items_router` with this dependency.
-  - Frontend: [apps/web/src/app/admin/](apps/web/src/app/admin/) (and login) should send the token (e.g. from login response) in `Authorization` for all admin API calls. Store token in memory or httpOnly cookie.
-- **Roles**: For "admin only" you can require role `admin` in the dependency; later you can add a "viewer" role that has read-only access to admin endpoints.
-
-### 2.5 "X events this week" real endpoint
-
-- **API**: In [apps/api/app/routers/events.py](apps/api/app/routers/events.py), add a GET endpoint (e.g. `GET /api/events/count?start=...&end=...` or `GET /api/events/stats`) that returns the count of (non-hidden) occurrences in the given week (same date logic as `/range`). Use America/New_York for "this week" boundaries.
-- **Frontend**: In [apps/web/src/app/components/home/HeroSection.tsx](apps/web/src/app/components/home/HeroSection.tsx), fetch this count (e.g. from a small hook or server component that calls the API) and replace the hardcoded "42 Events this week in Sarasota" with the real value. Handle loading/error (e.g. show "Events this week" without number on error).
-
-### 2.6 Weather report caching (API limit protection)
-
-- **Goal:** Avoid calling the weather provider on every request by caching forecast snapshots in Postgres and serving weather from cache first.
-- **Cadence:** Run a scheduled job (Celery Beat or cron) **2-4 times per day** (e.g. every 6-12 hours). This is enough for event cards and keeps calls well below typical free-tier limits.
-- **Storage:** Add a small table (e.g. `weather_reports`) with fields like `id`, `provider`, `location_key`, `forecast_date`, `payload_json`, `fetched_at`, and `expires_at`. Keep raw provider payload in JSON for flexibility.
-- **Read path:** API endpoints that need weather should read the latest non-expired row for a location/date range; only trigger an on-demand fetch if cache is missing or stale.
-- **Rate-limit guardrails:** Add a daily max-fetch cap per provider/location, log fetch counts, and alert/skip fetches when near quota. Use jitter in scheduled tasks so all sources do not fire at the same second.
-- **Retention:** Keep a short retention window (e.g. 7-14 days of snapshots) and prune older records with a periodic cleanup task.
-
-**Deliverables:** Unified scraper CLI + logging; consistent event card layout; full Docker compose + Dockerfiles; admin behind auth with role; hero shows live event count; weather reports cached in DB with scheduled refresh and quota guardrails.
+**Deliverables:** Venue pages stable in production runtime; event detail route behavior confirmed.
 
 ---
 
-## Step 3: Additional pages – venue fix and event detail
+## Step 2: Event discovery completion (highest product impact)
 
-**Goal:** Venue page works reliably; event detail page exists and is the primary internal destination for an event.
+**Goal:** Make event discovery fully functional via categories, filters, and surprise flow.
 
-### 3.1 Fix venue page
+### 2.1 Categories API and filters
 
-- **Next.js 15+ params**: In [apps/web/src/app/venues/[slug]/page.tsx](apps/web/src/app/venues/[slug]/page.tsx), `params` in App Router can be a Promise. Since the page is a client component, use React's `use()` to unwrap the promise: e.g. `const { slug } = use(params);`. Alternatively, make the page a server component and `await params` before passing `slug` to a client child that does the data fetching. Fix whichever matches your pattern.
-- **Empty state and errors**: Ensure 404 from API (venue not found) shows a clear "Venue not found" message and optionally a link back to `/venues`. Keep the existing "Upcoming events" section and empty state.
+- [ ] Add `GET /api/categories` (id, name, slug).
+- [ ] Extend `GET /api/events/range` (and optionally `/day`) with category/free/venue filter params.
+- [ ] Ensure category info is consistently included in event response payloads for list/detail use.
 
-### 3.2 Event detail page and API
+### 2.2 Frontend filtering and footer wiring
 
-- **API**: Add a public endpoint in [apps/api/app/routers/events.py](apps/api/app/routers/events.py), e.g. `GET /api/events/occurrence/{id}` or `GET /api/events/by-slug/{slug}`. The response should return one occurrence (or one event with its occurrences) with event + venue details, suitable for the detail page. If you use slug, the event model already has `slug`; decide whether the URL is event slug or occurrence id (occurrence id is unique and simpler for "this instance" of an event).
-- **Frontend**: Add `apps/web/src/app/events/[id]/page.tsx` (or `[slug]/page.tsx`). Fetch the single event/occurrence from the new API. Design: match the app's existing style (rounded cards, same typography and spacing), show title, description, date/time, venue, location text, "Free" or price, link to external URL if any, and optionally "More events at this venue" linking to `/venues/{venue.slug}`. Handle loading and 404.
-- **Linking**: Update [EventCardLarge](apps/web/src/app/components/home/EventCardLarge.tsx) and [EventCardCompact](apps/web/src/app/components/home/EventCardCompact.tsx) so that when there is no external_url (or when you prefer internal link), the card links to `/events/{id}` (or `/events/{slug}`) instead of `/events`. That way "Surprise me" and listing pages can eventually point to the detail page.
+- [ ] Wire events page filters to backend query params (date range, category, free-only).
+- [ ] Replace static footer category links with filtered links (`/events?category={slug}`) or agreed route pattern.
+- [ ] Align footer labels with canonical category slugs returned by API.
 
-**Deliverables:** Venue page works with correct params handling; new event detail API + page; event cards link to detail where appropriate.
+### 2.3 Surprise me
 
----
+- [ ] Add `GET /api/events/surprise?days=7` (optional category param).
+- [ ] Update hero CTA to fetch surprise result and navigate to event detail route.
 
-## Step 4: API filters, tags, categories, "Surprise me," footer
-
-**Goal:** Categories in the API and UI, better event filtering, working "Surprise me," and footer categories wired to filtered views.
-
-### 4.1 Categories in data and API
-
-- **Scraping**: You already have `SourceFeed.categories` (string) and `event_categories` linking events to `categories`. Ensure scrapers that support `--categories` (e.g. Selby, BigTop) actually write to the ingest pipeline so that when events are created from source feeds, they get linked to the right category rows. This may require ingestion code in [apps/api/app/services/ingest_upsert.py](apps/api/app/services/ingest_upsert.py) (or equivalent) to create/update `event_categories` from the feed's categories. Define a small set of canonical category slugs (e.g. Music, Arts & Culture, Food & Drink, Outdoors) and map source-specific labels to these.
-- **Cleanup**: Run a one-off script or admin action to normalize existing categories: merge duplicates, fix bad names, and attach events to the canonical list. Optionally hide or delete events that are clearly noise.
-- **API**: In [apps/api/app/routers/events.py](apps/api/app/routers/events.py):
-  - Add optional query params to `/range` (and `/day` if useful): `category` (slug or id), `venue_id`, `is_free`, etc.
-  - Expose list of categories: e.g. `GET /api/categories` returning id, name, slug (from [apps/api/app/models/category.py](apps/api/app/models/category.py)).
-  - Include category info in event/occurrence response (e.g. list of category slugs or names) so the frontend can show tags.
-
-### 4.2 Events page filtering
-
-- **Frontend**: In [apps/web/src/app/events/page.tsx](apps/web/src/app/events/page.tsx), add UI for date range (e.g. "Next 7 days" / "Next 30 days"), category filter (from `/api/categories`), and "Free only." Wire these to the existing `useEventsForRange` (or a new hook that accepts category/venue params) and update the API client to pass query params. Enable the "Family-friendly" filter when you have a category or tag for it; otherwise leave disabled with a tooltip "Coming soon."
-
-### 4.3 "Surprise me"
-
-- **Behavior**: Define semantics: e.g. "one random event from the next 7 days" or "one random event from a random category." Recommended: one random non-hidden occurrence in the next 7 (or 14) days.
-- **API**: Add e.g. `GET /api/events/surprise?days=7` that returns a single random occurrence (order by random(), limit 1) in the given window. Optional: `category` param to limit to a category.
-- **Frontend**: In [apps/web/src/app/components/home/HeroSection.tsx](apps/web/src/app/components/home/HeroSection.tsx), change the "Surprise me" button from a plain link to `/events` to a link to `/events/{id}` where `id` is fetched from the surprise endpoint (e.g. on click: fetch surprise, then navigate). Alternatively, add a dedicated route `/events/surprise` that server- or client-fetches the surprise and redirects to `/events/{id}`.
-
-### 4.4 Footer categories
-
-- **Data**: Ensure footer category labels (Music, Arts & Culture, Food & Drink, Outdoors) match category slugs in the DB. If not, add those categories and use them consistently.
-- **Links**: In [apps/web/src/app/components/Footer.tsx](apps/web/src/app/components/Footer.tsx), change category links from `/events` to `/events?category={slug}` (or `/events/category/{slug}` if you use a path-based filter). The events page will then read the query param and pass it to the API.
-
-**Deliverables:** Categories in ingestion and API; cleaned category data; events list filterable by category/date/free; "Surprise me" returns and links to one random event; footer categories open filtered events list.
+**Deliverables:** End-to-end event discovery experience is complete and functional.
 
 ---
 
-## Step 5: SEO Foundation and Metrics
+## Step 3: SEO launch minimum
 
-**Goal:** Implement SEO best practices and analytics before launch so the site is discoverable and you have baseline data from day one.
+**Goal:** Ensure discoverability at launch with crawl/index/share basics.
 
-### 5.1 Analytics setup (PostHog self-hosted)
+- [ ] Add `apps/web/src/app/sitemap.ts` (static + dynamic routes).
+- [ ] Add `apps/web/src/app/robots.ts` (allow/disallow + sitemap reference).
+- [ ] Set/verify `metadataBase` in root layout for canonical URL generation.
+- [ ] Add JSON-LD:
+  - [ ] Event schema on event detail pages
+  - [ ] Place/LocalBusiness schema on venue pages
+  - [ ] Article schema on article detail pages
+- [ ] Validate metadata and structured data outputs before launch.
 
-- **Container:** Add PostHog to `compose.yml` using their Docker setup. Requires Postgres (can share yours or use separate), Redis (can reuse existing), and the PostHog worker/web containers. See [PostHog self-host docs](https://posthog.com/docs/self-host).
-- **Integration:** Add PostHog snippet to [apps/web/src/app/layout.tsx](apps/web/src/app/layout.tsx) or use `posthog-js` with `next` for better integration. Configure for **cookieless mode** (`persistence: 'memory'`) to avoid cookie consent requirements and preserve good UX.
-- **Custom events:** Define and instrument key events for future featured placements and ads:
-  - `event_viewed` — on event detail page load, with properties: `event_id`, `venue_id`, `category`, `is_featured`
-  - `event_link_clicked` — when user clicks external event link, with `event_id`
-  - `featured_event_impression` — when a featured placement enters viewport
-  - `featured_event_clicked` — when user clicks a featured placement
-  - `ad_impression` and `ad_clicked` — when ad placements are added later
-- **Dashboard:** Create a PostHog dashboard with: daily unique visitors, top viewed events, top referrers, device breakdown, and (later) featured placement performance.
-
-### 5.2 SEO meta and Open Graph
-
-- **Metadata API:** Use Next.js `metadata` export in [apps/web/src/app/layout.tsx](apps/web/src/app/layout.tsx) for site-wide defaults (site name, default description, default OG image). Add `generateMetadata` function in dynamic routes to set unique values:
-  - `events/[id]/page.tsx` — event title, description from event data, event image if available
-  - `venues/[slug]/page.tsx` — venue name, description, venue image
-  - `articles/[slug]/page.tsx` — article title, excerpt, article image
-- **OG images:** Create a default OG image (1200x630) in `public/` for social sharing. Optionally generate dynamic OG images per event/venue using `@vercel/og` or a simple image template.
-- **Checklist for every public page:**
-  - Unique `<title>` (50-60 chars)
-  - `<meta name="description">` (150-160 chars)
-  - `og:title`, `og:description`, `og:image`, `og:url`
-  - `twitter:card` (summary_large_image)
-
-### 5.3 Structured data (JSON-LD)
-
-- **Event pages:** Add `Event` schema ([schema.org/Event](https://schema.org/Event)) to `events/[id]/page.tsx`:
-  - Required: `name`, `startDate`, `location` (venue name + address)
-  - Recommended: `endDate`, `description`, `image`, `url`, `offers` (for free/price info), `organizer`
-- **Venue pages:** Add `Place` or `LocalBusiness` schema to `venues/[slug]/page.tsx` with name, address, geo coordinates if available.
-- **Article pages:** Add `Article` schema to `articles/[slug]/page.tsx` with headline, datePublished, author, image.
-- **Homepage:** Add `WebSite` schema; include `potentialAction` with `SearchAction` if/when search is added.
-- **Validation:** Test all structured data with [Google Rich Results Test](https://search.google.com/test/rich-results) before launch.
-
-### 5.4 Sitemap and robots
-
-- **Sitemap:** Create `apps/web/src/app/sitemap.ts` using Next.js App Router sitemap generation:
-  - Static routes: `/`, `/events`, `/venues`, `/articles`, `/about`, `/contact`, `/submit`
-  - Dynamic routes: fetch event slugs/IDs, venue slugs, article slugs from API/content at build time
-  - Set `changeFrequency`: `daily` for `/events`, `weekly` for venues/articles, `monthly` for static pages
-  - Set `priority`: `1.0` for home, `0.8` for events/venues, `0.6` for articles, `0.4` for about/contact
-- **Robots:** Create `apps/web/src/app/robots.ts`:
-  - Allow all user agents
-  - Disallow: `/admin`, `/cms`, `/api`
-  - Point to sitemap URL
-- **Canonical URLs:** Set `metadataBase` in root layout to production URL (e.g., `https://srqhappenings.com`) so all generated URLs are correct.
-
-### 5.5 Future: Ad network integration (optional, documented)
-
-- **Decision point:** If direct ad sales are insufficient and ad network revenue becomes a priority, GA4 can be added alongside PostHog.
-- **What it requires:** Adding GA4 snippet (~30kb), implementing a cookie consent banner (e.g., `react-cookie-consent`), updating privacy policy.
-- **Trade-offs:** Richer cross-session analytics and Google Ads integration vs. heavier page weight and consent UX friction.
-- **Action:** Document this as a future option; revisit after launch based on traffic and monetization needs.
-
-**Deliverables:** PostHog running in Docker with cookieless tracking; custom events instrumented for featured/ad placements; SEO meta and OG tags on all pages; JSON-LD structured data for events, venues, articles; sitemap.ts and robots.ts; documented path for GA4 if needed later.
+**Deliverables:** Crawlable and share-ready pages with structured data coverage.
 
 ---
 
-## Step 6: Deployment plan, CI/CD, costs, and roadmap section
+## Step 4: Analytics and launch instrumentation
 
-**Goal:** Document how to go live, automate checks/deploys, estimate cost, and add a "What's next" section on the About page.
+**Goal:** Capture baseline product usage and monetization signals from day one.
 
-### 6.1 Deployment plan
+- [ ] Integrate PostHog (cookieless mode) into web app.
+- [ ] Instrument key events:
+  - [ ] `event_viewed`
+  - [ ] `event_link_clicked`
+  - [ ] `featured_event_impression`
+  - [ ] `featured_event_clicked`
+- [ ] Create initial dashboard (daily users, top events, top referrers, device split).
 
-- **Target**: Choose primary target (e.g. VPS, Fly.io, Railway, or Vercel + separate API). Document steps: build images, env vars, migrations, health checks, and how Decap admin is reached (URL, Git auth).
-- **Runbook**: Short runbook: start/stop, logs, backup DBs (Postgres and any future CMS DB), restoring from backup.
-
-### 6.2 CI/CD
-
-- **Pipeline**: Add a pipeline (e.g. GitHub Actions) that on push/PR: runs API tests (if any), runs web lint/build. On merge to main (or tag): build and push Docker images, optionally deploy to staging or production (e.g. deploy script or platform CLI).
-- **Secrets**: Document which secrets are needed (DB URLs, API keys, Decap Git OAuth, etc.) and where they live (env file, platform secrets).
-
-### 6.3 Projected costs
-
-- **List services**: e.g. VPS or PaaS, domain, email (for submit/contact), optional CDN, Redis if used. Estimate monthly cost for a minimal production setup and note what scales (e.g. more traffic, more workers).
-
-### 6.4 Roadmap on About page
-
-- **Content**: In [apps/web/src/app/about/page.tsx](apps/web/src/app/about/page.tsx), add a section (e.g. "What's next" or "Roadmap") that lists the Step 7 items as future improvements: venue matching and similarity, sign-in and curated newsletter, more event sources, submit form to API/admin list, organizer accounts and iCal uploads. Keep it short and readable; link to contact or submit for feedback.
-
-**Deliverables:** Deployment doc, CI/CD workflow, cost estimate, About page roadmap section.
+**Deliverables:** Working analytics with actionable baseline dashboard.
 
 ---
 
-## Step 7 (Next sprint): Long-term improvements
+## Step 5: Deployment readiness and operations
 
-**Goal:** Define and prioritize; implementation can be split across future sprints.
+**Goal:** Make launch reproducible, supportable, and safe.
+
+### 5.1 Production background jobs parity
+
+- [ ] Decide and implement production strategy for Redis + Celery worker/beat (compose or external service).
+- [ ] Ensure scheduled scraping/weather tasks run in production context.
+
+### 5.2 CI/CD
+
+- [ ] Add GitHub Actions workflows for PR/push checks:
+  - [ ] API lint/tests
+  - [ ] Web lint/build
+- [ ] Add release/deploy workflow (or documented deploy runbook if manual for v1).
+
+### 5.3 Runbook and cost notes
+
+- [x] Base infra/runbook docs exist (`docs/database-guide.md`).
+- [ ] Add final launch runbook checklist (migrations, rollback, logs, backups).
+- [ ] Add/update projected monthly cost section for selected hosting stack.
+
+**Deliverables:** Repeatable deploy path, production job execution, launch runbook.
+
+---
+
+## Step 6: Nice-to-have polish before/just after launch
+
+**Goal:** Improve quality and consistency without blocking go-live.
+
+- [ ] Event card visual consistency pass (grid sizing, responsive parity).
+- [ ] UI consistency pass (spacing, loading states, empty/error states wording).
+- [ ] Scraper CLI contract normalization final pass (ensure all collectors accept documented shared flags).
+
+**Deliverables:** Better UX consistency and cleaner collector ergonomics.
+
+---
+
+## Step 7 (Next sprint, post-launch): Long-term improvements
+
+**Goal:** Expand product depth after launch stability and discovery loops are validated.
 
 | Area | Details |
-
 |------|--------|
+| **Venue matching** | Improve matching of new occurrences to venues using aliases + similarity scoring to reduce admin/manual resolution workload. |
+| **Sign-in and newsletter** | User accounts, preference capture, and weekly digest delivery pipeline. |
+| **Event source expansion** | Add more scrapers/feeds and register/schedule through Celery tasks. |
+| **Submit form backend** | Convert submit flow from mailto to API + moderation queue in admin. |
+| **Organizers** | Organizer role, self-service venue management, and event/ical upload workflows. |
+| **Personalization** | Better personalized recommendations and robust user-facing fallback/error copy patterns. |
 
-| **Venue matching** | Improve matching of new occurrences to venues: compare location text and venue aliases ([apps/api/app/models/venue_alias.py](apps/api/app/models/venue_alias.py)), compute a similarity score (e.g. string similarity or small ML), suggest or auto-attach venue when above threshold; reduce manual resolution in admin. |
-
-| **Sign-in and newsletter** | User accounts (e.g. email + password or OAuth); preferences (categories, frequency); weekly digest job that selects events matching preferences and sends email (e.g. SendGrid, Resend). |
-
-| **Event source expansion** | Research and add new scrapers or iCal feeds; register sources in DB and add Celery tasks. |
-
-| **Submit form backend** | API endpoint that accepts submit payload, stores in DB (e.g. `submitted_events` table) and/or sends email; admin UI to list and approve/ignore submissions. |
-
-| **Organizers** | New role and flows: organizer sign-up, create "my venue," add events (and optionally upload iCal that populates events). Permissions so organizers only edit their own venue/events. |
-
-| **Personalization** | Add frontend error handling, using unique strings for when something breaks OR when there is no data
-
-**Deliverables:** Prioritized backlog and, when you're ready, implementation tickets for each area.
+**Deliverables:** Prioritized implementation backlog and first post-launch sprint tickets.
 
 ---
 
-## Dependency overview
+## Completed work checklist (quick reference)
 
-```mermaid
-flowchart LR
-  subgraph step1 [Step 1]
-    S1A[Decap CMS in repo]
-    S1B[Frontend CMS]
-    S1C[Celery prep]
-  end
-  subgraph step2 [Step 2]
-    S2A[Scrapers unified]
-    S2B[Docker full]
-    S2C[Admin auth]
-    S2D[Events count API]
-  end
-  subgraph step3 [Step 3]
-    S3A[Venue page fix]
-    S3B[Event detail API and page]
-  end
-  subgraph step4 [Step 4]
-    S4A[Categories API and data]
-    S4B[Events filtering]
-    S4C[Surprise me]
-    S4D[Footer categories]
-  end
-  subgraph step5 [Step 5]
-    S5A[PostHog analytics]
-    S5B[SEO meta and OG]
-    S5C[JSON-LD structured data]
-    S5D[Sitemap and robots]
-  end
-  subgraph step6 [Step 6]
-    S6A[Deploy and CI-CD]
-    S6B[Costs and roadmap]
-  end
-  S1A --> S1B
-  S1A --> S2B
-  S2D --> S4C
-  S3B --> S4C
-  S4A --> S4B
-  S4A --> S4D
-  S2A --> S1C
-  S3B --> S5C
-  S4A --> S5C
-  S5A --> S6A
-  S5D --> S6A
-```
+- [x] Content-backed articles pipeline and article detail pages.
+- [x] Celery app + task definitions + scheduled dev jobs.
+- [x] Dockerized local stack for API/Web/DB/Redis/Celery.
+- [x] Admin auth/role enforcement.
+- [x] Event detail API/route and card linking.
+- [x] Homepage live events count endpoint integration.
+- [x] Category domain model and ingestion category assignment.
 
 ---
 
-## Suggested order of work
+## Recommended launch sequence
 
-- **Step 1** first: CMS + frontend articles + Celery scaffold and one task; then hosting notes.
-- **Step 2** next: Docker, scraper normalization, admin auth, and "events this week" so the stack is deployable and secure.
-- **Step 3**: Venue fix and event detail page so every event has a proper destination.
-- **Step 4**: Categories and filtering, "Surprise me," and footer so the product feels complete.
-- **Step 5**: SEO foundation (meta, OG, JSON-LD, sitemap, robots) and PostHog analytics so you're discoverable and tracking from day one.
-- **Step 6**: Deployment, CI/CD, costs, and About page roadmap.
-- **Step 7**: Backlog and first tickets for venue matching, auth/newsletter, submit API, organizers, and new sources.
+1. Step 1 (stability blockers)
+2. Step 2 (discovery completeness)
+3. Step 3 (SEO minimum)
+4. Step 4 (analytics)
+5. Step 5 (ops/CI/CD)
+6. Step 6 (polish)
+7. Step 7 (post-launch)
+
+This order maximizes launch success by prioritizing reliability and core discovery flows before expansion work.

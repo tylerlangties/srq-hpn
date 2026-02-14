@@ -86,7 +86,8 @@ export function useVenueDetail(slug: string): State<VenueDetailOut> {
 export function useVenueEvents(
   slug: string,
   start: string,
-  end: string
+  end: string,
+  enabled = true
 ): State<EventOccurrenceOut[]> {
   const [state, setState] = useState<State<EventOccurrenceOut[]>>({
     data: null,
@@ -96,6 +97,12 @@ export function useVenueEvents(
 
   useEffect(() => {
     let cancelled = false;
+
+    if (!enabled) {
+      return () => {
+        cancelled = true;
+      };
+    }
 
     async function load() {
       try {
@@ -120,7 +127,11 @@ export function useVenueEvents(
     return () => {
       cancelled = true;
     };
-  }, [slug, start, end]);
+  }, [slug, start, end, enabled]);
+
+  if (!enabled) {
+    return { data: [], error: null, loading: false };
+  }
 
   return state;
 }
