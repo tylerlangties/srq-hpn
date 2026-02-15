@@ -1,6 +1,27 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo } from "react";
+import { useCategories } from "@/app/hooks/useEvents";
 
 export default function Footer() {
+  const categories = useCategories();
+
+  const categoryLinks = useMemo(() => {
+    if (!categories.data || categories.data.length === 0) {
+      return [
+        { name: "Live Music", slug: "live-music" },
+        { name: "Arts & Culture", slug: "arts-culture" },
+        { name: "Food & Drink", slug: "food-drink" },
+        { name: "Outdoors & Nature", slug: "outdoors-nature" },
+      ];
+    }
+    return categories.data.slice(0, 4).map((category) => ({
+      name: category.name,
+      slug: category.slug,
+    }));
+  }, [categories.data]);
+
   return (
     <footer className="relative z-10 border-t border-white/50 dark:border-white/10 bg-white/50 dark:bg-black/40 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-6 py-12">
@@ -38,18 +59,15 @@ export default function Footer() {
           <div>
             <p className="font-semibold text-charcoal dark:text-white mb-4">Categories</p>
             <div className="space-y-2 text-sm text-muted dark:text-white/50">
-              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
-                Music
-              </Link>
-              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
-                Arts & Culture
-              </Link>
-              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
-                Food & Drink
-              </Link>
-              <Link href="/events" className="hover:text-charcoal dark:hover:text-white transition block">
-                Outdoors
-              </Link>
+              {categoryLinks.map((category) => (
+                <Link
+                  key={category.slug}
+                  href={`/events?category=${encodeURIComponent(category.slug)}`}
+                  className="hover:text-charcoal dark:hover:text-white transition block"
+                >
+                  {category.name}
+                </Link>
+              ))}
             </div>
           </div>
           <div>

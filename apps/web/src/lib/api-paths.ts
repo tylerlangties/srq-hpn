@@ -11,9 +11,13 @@ export const API_PATHS = {
   events: {
     day: "/api/events/day",
     range: "/api/events/range",
+    surprise: "/api/events/surprise",
     count: "/api/events/count",
     detail: (eventId: number) => `/api/events/${eventId}`,
     resolve: (publicSlug: string) => `/api/events/resolve/${encodeURIComponent(publicSlug)}`,
+  },
+  categories: {
+    list: "/api/categories",
   },
   weather: {
     summary: "/api/weather",
@@ -41,7 +45,7 @@ export const API_PATHS = {
 
 export function withQuery(
   path: string,
-  params: Record<string, string | number | null | undefined>
+  params: Record<string, string | number | boolean | null | undefined>
 ): string {
   const searchParams = new URLSearchParams();
 

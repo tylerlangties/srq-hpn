@@ -26,8 +26,8 @@ This roadmap replaces stale assumptions with current implementation status, mark
 ### Partially complete / launch gaps
 
 - [x] Venue dynamic route reliability fix for Next.js async params handling.
-- [ ] Category API and end-to-end category filtering (API + UI + footer links).
-- [ ] "Surprise me" endpoint and CTA behavior (currently links to `/events`).
+- [x] Category API and end-to-end category filtering (API + UI + footer links).
+- [x] "Surprise me" endpoint and CTA behavior (currently links to `/events`).
 - [ ] Sitemap, robots, and structured data (JSON-LD) for SEO completeness.
 - [ ] Analytics integration (PostHog) and launch event instrumentation.
 - [ ] CI/CD workflows for repeatable checks and deploy readiness.
@@ -57,20 +57,20 @@ This roadmap replaces stale assumptions with current implementation status, mark
 
 ### 2.1 Categories API and filters
 
-- [ ] Add `GET /api/categories` (id, name, slug).
-- [ ] Extend `GET /api/events/range` (and optionally `/day`) with category/free/venue filter params.
-- [ ] Ensure category info is consistently included in event response payloads for list/detail use.
+- [x] Add `GET /api/categories` (id, name, slug).
+- [x] Extend `GET /api/events/range` (and optionally `/day`) with category/free/venue filter params.
+- [x] Ensure category info is consistently included in event response payloads for list/detail use.
 
 ### 2.2 Frontend filtering and footer wiring
 
-- [ ] Wire events page filters to backend query params (date range, category, free-only).
-- [ ] Replace static footer category links with filtered links (`/events?category={slug}`) or agreed route pattern.
-- [ ] Align footer labels with canonical category slugs returned by API.
+- [x] Wire events page filters to backend query params (date range, category, free-only).
+- [x] Replace static footer category links with filtered links (`/events?category={slug}`) or agreed route pattern.
+- [x] Align footer labels with canonical category slugs returned by API.
 
 ### 2.3 Surprise me
 
-- [ ] Add `GET /api/events/surprise?days=7` (optional category param).
-- [ ] Update hero CTA to fetch surprise result and navigate to event detail route.
+- [x] Add `GET /api/events/surprise?days=7` (optional category param).
+- [x] Update hero CTA to fetch surprise result and navigate to event detail route.
 
 **Deliverables:** End-to-end event discovery experience is complete and functional.
 

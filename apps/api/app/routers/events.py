@@ -8,8 +8,10 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_db
+from app.models.category import Category
 from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
+from app.models.venue import Venue
 from app.schemas.events import (
     EventCountOut,
     EventDetailOut,
@@ -43,9 +45,49 @@ def to_occurrence_payload(occ: EventOccurrence) -> dict[str, object]:
     }
 
 
+def apply_discovery_filters(
+    stmt,
+    *,
+    category_slug: str | None,
+    free_only: bool | None,
+    venue_slug: str | None,
+):
+    if isinstance(category_slug, str):
+        normalized_category_slug = category_slug.strip().lower()
+        if normalized_category_slug:
+            stmt = stmt.join(Event.categories).where(
+                Category.slug == normalized_category_slug
+            )
+
+    if isinstance(free_only, bool):
+        stmt = stmt.where(Event.is_free.is_(free_only))
+
+    if isinstance(venue_slug, str):
+        normalized_venue_slug = venue_slug.strip().lower()
+        if normalized_venue_slug:
+            stmt = stmt.join(Venue, EventOccurrence.venue_id == Venue.id).where(
+                Venue.slug == normalized_venue_slug
+            )
+
+    return stmt
+
+
 @router.get("/day", response_model=list[EventOccurrenceOut])
 def events_for_day(
     day: date = Query(..., description="Local date in YYYY-MM-DD (America/New_York)"),
+    category: str | None = Query(
+        default=None,
+        description="Optional category slug filter",
+    ),
+    free_only: bool | None = Query(
+        default=None,
+        alias="free",
+        description="Optional free-only filter",
+    ),
+    venue: str | None = Query(
+        default=None,
+        description="Optional venue slug filter",
+    ),
     db: Session = Depends(get_db),
 ) -> list[dict[str, object]]:
     """Get events for a specific day."""
@@ -74,12 +116,24 @@ def events_for_day(
         )
         .order_by(EventOccurrence.start_datetime_utc.asc())
     )
+    stmt = apply_discovery_filters(
+        stmt,
+        category_slug=category,
+        free_only=free_only,
+        venue_slug=venue,
+    )
 
     occurrences = db.scalars(stmt).all()
 
     logger.info(
         "Found events for day",
-        extra={"day": str(day), "count": len(occurrences)},
+        extra={
+            "day": str(day),
+            "category": category,
+            "free": free_only,
+            "venue": venue,
+            "count": len(occurrences),
+        },
     )
 
     # Build response objects:
@@ -94,6 +148,19 @@ def events_for_range(
     ),
     end: date = Query(
         ..., description="End local date YYYY-MM-DD (America/New_York), inclusive"
+    ),
+    category: str | None = Query(
+        default=None,
+        description="Optional category slug filter",
+    ),
+    free_only: bool | None = Query(
+        default=None,
+        alias="free",
+        description="Optional free-only filter",
+    ),
+    venue: str | None = Query(
+        default=None,
+        description="Optional venue slug filter",
     ),
     db: Session = Depends(get_db),
 ) -> list[dict[str, object]]:
@@ -134,15 +201,71 @@ def events_for_range(
         )
         .order_by(EventOccurrence.start_datetime_utc.asc())
     )
+    stmt = apply_discovery_filters(
+        stmt,
+        category_slug=category,
+        free_only=free_only,
+        venue_slug=venue,
+    )
 
     occurrences = db.scalars(stmt).all()
 
     logger.info(
         "Found events for range",
-        extra={"start": str(start), "end": str(end), "count": len(occurrences)},
+        extra={
+            "start": str(start),
+            "end": str(end),
+            "category": category,
+            "free": free_only,
+            "venue": venue,
+            "count": len(occurrences),
+        },
     )
 
     return [to_occurrence_payload(occ) for occ in occurrences]
+
+
+@router.get("/surprise", response_model=EventOccurrenceOut)
+def surprise_event(
+    days: int = Query(
+        default=7,
+        ge=1,
+        le=30,
+        description="How many days ahead to search for a surprise event",
+    ),
+    category: str | None = Query(
+        default=None,
+        description="Optional category slug filter",
+    ),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    now_utc = datetime.now(UTC)
+    end_utc = now_utc + timedelta(days=days)
+
+    stmt = (
+        select(EventOccurrence)
+        .join(Event, EventOccurrence.event_id == Event.id)
+        .where(EventOccurrence.start_datetime_utc >= now_utc)
+        .where(EventOccurrence.start_datetime_utc < end_utc)
+        .where(Event.hidden.is_(False))
+        .options(
+            selectinload(EventOccurrence.event).selectinload(Event.categories),
+            selectinload(EventOccurrence.venue),
+        )
+    )
+    stmt = apply_discovery_filters(
+        stmt,
+        category_slug=category,
+        free_only=None,
+        venue_slug=None,
+    )
+    stmt = stmt.order_by(func.random()).limit(1)
+
+    occurrence = db.scalar(stmt)
+    if occurrence is None:
+        raise HTTPException(status_code=404, detail="No surprise event found")
+
+    return to_occurrence_payload(occurrence)
 
 
 @router.get("/count", response_model=EventCountOut)

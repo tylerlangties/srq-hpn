@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
 import type { WeatherPayload } from "@/lib/weather";
 import FeaturedEventCard from "./FeaturedEventCard";
+import SurpriseMeButton from "./SurpriseMeButton";
 import WeatherWidget from "./WeatherWidget";
 
 type Props = {
@@ -50,12 +51,7 @@ export default function HeroSection({
             >
               Browse events
             </Link>
-            <Link
-              href="/events"
-              className="rounded-full border border-charcoal/10 bg-white/80 px-7 py-3.5 text-sm font-semibold text-charcoal shadow-sm hover:bg-white transition dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-            >
-              Surprise me
-            </Link>
+            <SurpriseMeButton days={7} />
           </div>
         </div>
 

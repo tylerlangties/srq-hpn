@@ -50,7 +50,7 @@ def _resolve_bigtop_source_id(conn) -> int:
     if len(rows) != 1:
         matches = [f"id={row.id} name={row.name!r} url={row.url!r}" for row in rows]
         raise RuntimeError(
-            "Expected exactly one Big Top source row, " f"found {len(rows)}: {matches}"
+            f"Expected exactly one Big Top source row, found {len(rows)}: {matches}"
         )
 
     return int(rows[0].id)
