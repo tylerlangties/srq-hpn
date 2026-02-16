@@ -1,5 +1,33 @@
+import type { Metadata } from "next";
 import AppLayout from "../components/AppLayout";
 import ArticlesSection from "../components/home/ArticlesSection";
+
+const title = "Sarasota Guides and Local Articles | SRQ Happenings";
+const description =
+  "Read Sarasota local guides, event roundups, and neighborhood stories to plan your week.";
+const openGraphImage = "/opengraph-image";
+const twitterImage = "/twitter-image";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: {
+    canonical: "/articles",
+  },
+  openGraph: {
+    title,
+    description,
+    url: "/articles",
+    type: "website",
+    images: [{ url: openGraphImage }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [twitterImage],
+  },
+};
 
 export default function ArticlesPage() {
   return (

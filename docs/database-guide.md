@@ -150,6 +150,9 @@ POSTGRES_APP_PASSWORD=<generated-app-password>
 
 # Frontend API URL (empty = use relative URLs via Caddy)
 NEXT_PUBLIC_API_BASE_URL=
+
+# Frontend site origin for canonical URLs, sitemap, robots, and JSON-LD
+NEXT_PUBLIC_SITE_URL=https://srqhappenings.com
 ```
 
 **Option B: Secrets Manager** (recommended for cloud deployments)
@@ -160,6 +163,8 @@ NEXT_PUBLIC_API_BASE_URL=
 Configure your deployment to inject these as environment variables.
 
 > **Note:** `NEXT_PUBLIC_API_BASE_URL` can be left empty in production. Since Caddy routes `/api/*` to the API, the frontend can use relative URLs like `/api/events`.
+
+> **SEO Note:** Set `NEXT_PUBLIC_SITE_URL` to your live origin in production. For this project, use `https://srqhappenings.com` so canonical metadata, sitemap URLs, robots host, and structured data all resolve to the correct domain.
 
 ### Step 3: Deploy and Initialize
 
@@ -413,6 +418,7 @@ COMMIT;  -- or ROLLBACK; if something's wrong
 | `DATABASE_URL` | Connection string for app | Auto-generated in Docker |
 | `DATABASE_URL_ADMIN` | Connection string for migrations | Auto-generated in Docker |
 | `NEXT_PUBLIC_API_BASE_URL` | API URL for frontend | Empty in prod (uses relative URLs) |
+| `NEXT_PUBLIC_SITE_URL` | Public site origin used for SEO URLs | **Yes (production)** |
 
 ### File Locations
 

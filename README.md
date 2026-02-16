@@ -136,6 +136,48 @@ python apps/api/scripts/create_admin_user.py --email admin@example.com --passwor
 
 ---
 
+## 🚢 Deployment (Production)
+
+For full production setup, use `docs/database-guide.md` as the source of truth. This section gives the minimum launch-critical steps.
+
+### 1) Set production environment variables
+
+In your production env file or secret manager, set at least:
+
+```bash
+DOMAIN=srqhappenings.com
+NEXT_PUBLIC_API_BASE_URL=
+NEXT_PUBLIC_SITE_URL=https://srqhappenings.com
+POSTGRES_PASSWORD=<secure-value>
+POSTGRES_APP_PASSWORD=<secure-value>
+```
+
+Why `NEXT_PUBLIC_SITE_URL` matters:
+- It powers canonical URLs, sitemap URLs, robots host/sitemap references, and JSON-LD absolute URLs.
+- If this is wrong, SEO signals can point to the wrong origin.
+
+### 2) Deploy services
+
+```bash
+docker compose --env-file .env.production up -d db
+docker compose --env-file .env.production up -d --build api
+docker compose --env-file .env.production exec api alembic upgrade head
+docker compose --env-file .env.production up -d
+```
+
+### 3) Verify after deploy
+
+```bash
+curl -I https://srqhappenings.com
+curl https://srqhappenings.com/api/health
+curl https://srqhappenings.com/robots.txt
+curl https://srqhappenings.com/sitemap.xml
+```
+
+Then complete the SEO launch checks in `docs/seo-implementation-checklist.md` (Search Console property + sitemap submission + URL inspection).
+
+---
+
 ## 📜 Scripts
 
 | Command | Description |

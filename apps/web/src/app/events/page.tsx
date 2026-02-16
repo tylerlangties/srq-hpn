@@ -1,6 +1,34 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import AppLayout from "../components/AppLayout";
 import EventsPageClient from "./EventsPageClient";
+
+const title = "Sarasota Events Calendar | SRQ Happenings";
+const description =
+  "Find Sarasota events by date and category, including free things to do, nightlife, family plans, and weekend picks.";
+const openGraphImage = "/opengraph-image";
+const twitterImage = "/twitter-image";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: {
+    canonical: "/events",
+  },
+  openGraph: {
+    title,
+    description,
+    url: "/events",
+    type: "website",
+    images: [{ url: openGraphImage }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [twitterImage],
+  },
+};
 
 function EventsPageFallback() {
   return (

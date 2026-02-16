@@ -1,109 +1,120 @@
-"use client";
-
-import Link from "next/link";
-import { use } from "react";
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import AppLayout from "../../components/AppLayout";
-import EventCardLarge from "../../components/home/EventCardLarge";
-import { useVenueDetail, useVenueEvents } from "../../hooks/useVenues";
+import VenueDetailClient from "./VenueDetailClient";
+import { apiGet } from "@/lib/api";
+import { API_PATHS, withQuery } from "@/lib/api-paths";
 import { addDays, toYmd } from "@/lib/dates";
+import { buildSiteUrl } from "@/lib/seo";
+import type { EventOccurrenceOut, VenueDetailOut } from "@/types/events";
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
-export default function VenueDetailPage({ params }: Props) {
-  const { slug } = use(params);
-  const venue = useVenueDetail(slug);
-  const venueNotFound = Boolean(!venue.loading && venue.error && venue.error.includes("404"));
+const openGraphImage = "/opengraph-image";
+const twitterImage = "/twitter-image";
+
+async function getVenueDetail(slug: string): Promise<VenueDetailOut | null> {
+  try {
+    return await apiGet<VenueDetailOut>(API_PATHS.venues.detail(slug));
+  } catch {
+    return null;
+  }
+}
+
+async function getVenueEvents(
+  slug: string,
+  start: string,
+  end: string
+): Promise<EventOccurrenceOut[]> {
+  try {
+    return await apiGet<EventOccurrenceOut[]>(withQuery(API_PATHS.venues.events(slug), { start, end }));
+  } catch {
+    return [];
+  }
+}
+
+function getVenueDescription(venue: VenueDetailOut): string {
+  const area = venue.area ?? "Sarasota";
+  return `Discover upcoming events at ${venue.name} in ${area}, including venue details and schedules.`;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const venue = await getVenueDetail(slug);
+
+  if (!venue) {
+    return {
+      title: "Venue not found | SRQ Happenings",
+      description: "This venue could not be found.",
+      robots: { index: false, follow: true },
+    };
+  }
+
+  const title = `${venue.name} | SRQ Happenings`;
+  const description = getVenueDescription(venue);
+  const canonicalPath = `/venues/${venue.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      type: "website",
+      images: [{ url: openGraphImage }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [twitterImage],
+    },
+  };
+}
+
+export default async function VenueDetailPage({ params }: Props) {
+  const { slug } = await params;
+  const venue = await getVenueDetail(slug);
+
+  if (!venue) {
+    notFound();
+  }
+
+  if (slug !== venue.slug) {
+    redirect(`/venues/${encodeURIComponent(venue.slug)}`);
+  }
 
   const start = toYmd(new Date());
   const end = toYmd(addDays(new Date(), 14));
-  const events = useVenueEvents(slug, start, end, !venueNotFound);
+  const events = await getVenueEvents(venue.slug, start, end);
+  const venueJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: venue.name,
+    url: buildSiteUrl(`/venues/${venue.slug}`).toString(),
+    sameAs: venue.website ?? undefined,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: venue.address ?? undefined,
+      addressLocality: venue.area ?? "Sarasota",
+      addressRegion: "FL",
+      addressCountry: "US",
+    },
+  };
 
   return (
     <AppLayout>
-      <div className="mx-auto w-full max-w-6xl px-6 py-12">
-        {venueNotFound ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-            <p className="font-semibold">Venue not found.</p>
-            <p className="mt-1">It may have been removed or the link may be out of date.</p>
-            <Link
-              href="/venues"
-              className="mt-3 inline-flex text-sm font-medium text-gulf underline-offset-2 hover:underline dark:text-cyan-300"
-            >
-              Back to venues
-            </Link>
-          </div>
-        ) : venue.error ? (
-          <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-5 text-sm text-red-700 dark:text-red-300">
-            {venue.error}
-          </div>
-        ) : venue.loading ? (
-          <div className="h-32 rounded-3xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 animate-pulse" />
-        ) : venue.data ? (
-          <div className="mb-10 rounded-3xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 p-6 shadow-sm">
-            <h1 className="text-3xl md:text-4xl font-[var(--font-heading)] font-semibold">
-              {venue.data.name}
-            </h1>
-            <p className="mt-2 text-muted dark:text-white/60">
-              {venue.data.area ?? "Sarasota"} · {venue.data.timezone ?? "America/New_York"}
-            </p>
-            {venue.data.address ? (
-              <p className="mt-2 text-sm text-muted dark:text-white/50">
-                {venue.data.address}
-              </p>
-            ) : null}
-            {venue.data.website ? (
-              <a
-                href={venue.data.website}
-                className="mt-3 inline-flex text-sm text-gulf dark:text-purple-300"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Visit website →
-              </a>
-            ) : null}
-          </div>
-        ) : null}
-
-        {!venueNotFound ? (
-          <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-[var(--font-heading)] font-semibold">
-                Upcoming events
-              </h2>
-              <p className="mt-2 text-muted dark:text-white/60">
-                Next two weeks at this venue.
-              </p>
-            </div>
-
-            {events.error ? (
-              <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-5 text-sm text-red-700 dark:text-red-300">
-                {events.error}
-              </div>
-            ) : events.loading ? (
-              <div className="grid gap-4 lg:grid-cols-2">
-                {[0, 1].map((key) => (
-                  <div
-                    key={key}
-                    className="h-28 rounded-2xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 animate-pulse"
-                  />
-                ))}
-              </div>
-            ) : events.data && events.data.length > 0 ? (
-              <div className="grid gap-4 lg:grid-cols-2">
-                {events.data.map((event) => (
-                  <EventCardLarge key={event.id} event={event} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted dark:text-white/60">
-                No upcoming events listed for this venue.
-              </p>
-            )}
-          </>
-        ) : null}
-      </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(venueJsonLd) }}
+      />
+      <VenueDetailClient venue={venue} events={events} />
     </AppLayout>
   );
 }

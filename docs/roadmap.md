@@ -2,7 +2,7 @@
 name: SRQ Happenings Launch Roadmap (Updated)
 overview: Launch-optimized roadmap with completed work checked off, current gaps prioritized, and post-launch initiatives preserved as the final step.
 todos: []
-updated: 2026-02-14
+updated: 2026-02-16
 ---
 
 # SRQ Happenings: Launch Roadmap (Updated)
@@ -28,7 +28,7 @@ This roadmap replaces stale assumptions with current implementation status, mark
 - [x] Venue dynamic route reliability fix for Next.js async params handling.
 - [x] Category API and end-to-end category filtering (API + UI + footer links).
 - [x] "Surprise me" endpoint and CTA behavior (currently links to `/events`).
-- [ ] Sitemap, robots, and structured data (JSON-LD) for SEO completeness.
+- [x] Sitemap, robots, and structured data (JSON-LD) for SEO completeness.
 - [ ] Analytics integration (PostHog) and launch event instrumentation.
 - [ ] CI/CD workflows for repeatable checks and deploy readiness.
 - [ ] Production background job strategy parity (prod compose currently does not include Redis/Celery worker/beat).
@@ -80,13 +80,13 @@ This roadmap replaces stale assumptions with current implementation status, mark
 
 **Goal:** Ensure discoverability at launch with crawl/index/share basics.
 
-- [ ] Add `apps/web/src/app/sitemap.ts` (static + dynamic routes).
-- [ ] Add `apps/web/src/app/robots.ts` (allow/disallow + sitemap reference).
-- [ ] Set/verify `metadataBase` in root layout for canonical URL generation.
+- [x] Add `apps/web/src/app/sitemap.ts` (static + dynamic routes).
+- [x] Add `apps/web/src/app/robots.ts` (allow/disallow + sitemap reference).
+- [x] Set/verify `metadataBase` in root layout for canonical URL generation.
 - [ ] Add JSON-LD:
-  - [ ] Event schema on event detail pages
-  - [ ] Place/LocalBusiness schema on venue pages
-  - [ ] Article schema on article detail pages
+  - [x] Event schema on event detail pages
+  - [x] Place/LocalBusiness schema on venue pages
+  - [x] Article schema on article detail pages
 - [ ] Validate metadata and structured data outputs before launch.
 
 **Deliverables:** Crawlable and share-ready pages with structured data coverage.
@@ -128,7 +128,7 @@ This roadmap replaces stale assumptions with current implementation status, mark
 ### 5.3 Runbook and cost notes
 
 - [x] Base infra/runbook docs exist (`docs/database-guide.md`).
-- [ ] Add final launch runbook checklist (migrations, rollback, logs, backups).
+- [x] Add final launch runbook checklist (migrations, rollback, logs, backups).
 - [ ] Add/update projected monthly cost section for selected hosting stack.
 
 **Deliverables:** Repeatable deploy path, production job execution, launch runbook.
@@ -159,6 +159,8 @@ This roadmap replaces stale assumptions with current implementation status, mark
 | **Submit form backend** | Convert submit flow from mailto to API + moderation queue in admin. |
 | **Organizers** | Organizer role, self-service venue management, and event/ical upload workflows. |
 | **Personalization** | Better personalized recommendations and robust user-facing fallback/error copy patterns. |
+| **Social share QA** | Post-deploy preview validation for `/`, `/events`, one event detail, one article detail, and one venue detail using X Card Validator, Facebook Sharing Debugger (with re-scrape), LinkedIn Post Inspector, plus a private Slack/Discord unfurl check. Verify title, description, canonical URL, and image render consistently. |
+| **Share cache monitoring** | Add a lightweight playbook for stale previews (force re-scrape, expected cache delays, and rollback trigger if critical cards break). |
 
 **Deliverables:** Prioritized implementation backlog and first post-launch sprint tickets.
 

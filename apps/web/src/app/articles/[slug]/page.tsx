@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import AppLayout from "../../components/AppLayout";
 import { getArticleBySlug, getArticleSlugs } from "@/lib/articles";
+import { buildSiteUrl } from "@/lib/seo";
 
 type ArticlePageProps = {
   params: Promise<{ slug: string }>;
@@ -23,16 +24,33 @@ export async function generateMetadata({
     return {};
   }
 
+  const title = article.metaTitle ?? article.title;
+  const description = article.metaDescription ?? article.excerpt;
+  const canonicalPath = `/articles/${slug}`;
+  const openGraphImage = article.coverImage
+    ? buildSiteUrl(article.coverImage).toString()
+    : buildSiteUrl("/opengraph-image").toString();
+  const twitterImage = buildSiteUrl("/twitter-image").toString();
+
   return {
-    title: article.metaTitle ?? article.title,
-    description: article.metaDescription ?? article.excerpt,
-    openGraph: article.coverImage
-      ? {
-          title: article.metaTitle ?? article.title,
-          description: article.metaDescription ?? article.excerpt,
-          images: [{ url: article.coverImage }],
-        }
-      : undefined,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      type: "article",
+      images: [{ url: openGraphImage }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [article.coverImage ? openGraphImage : twitterImage],
+    },
   };
 }
 
@@ -44,8 +62,38 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
+  const articleUrl = buildSiteUrl(`/articles/${slug}`).toString();
+  const coverImageUrl = article.coverImage
+    ? buildSiteUrl(article.coverImage).toString()
+    : undefined;
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.metaTitle ?? article.title,
+    description: article.metaDescription ?? article.excerpt,
+    articleSection: article.category,
+    datePublished: article.date ?? undefined,
+    dateModified: article.date ?? undefined,
+    url: articleUrl,
+    mainEntityOfPage: articleUrl,
+    image: coverImageUrl ? [coverImageUrl] : undefined,
+    author: {
+      "@type": "Organization",
+      name: "SRQ Happenings",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "SRQ Happenings",
+      url: buildSiteUrl("/").toString(),
+    },
+  };
+
   return (
     <AppLayout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <article className="mx-auto w-full max-w-3xl px-6 py-12">
         <div className="mb-8 space-y-4">
           <p className="text-sm uppercase tracking-[0.3em] text-muted dark:text-white/50">

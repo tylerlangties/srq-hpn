@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import AppLayout from "../../components/AppLayout";
 import EventCardCompact from "../../components/home/EventCardCompact";
 import { parseEventRouteSegment, toDisplayEventTitle } from "@/lib/event-display";
+import { buildSiteUrl } from "@/lib/seo";
 import {
   formatDateTime,
   formatTimeRange,
@@ -16,6 +17,9 @@ import {
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
+
+const openGraphImage = "/opengraph-image";
+const twitterImage = "/twitter-image";
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug: routeSegment } = await params;
@@ -62,11 +66,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       url: canonicalPath,
       type: "article",
+      images: [{ url: openGraphImage }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [twitterImage],
     },
   };
 }
@@ -97,9 +103,58 @@ export default async function EventDetailPage({ params }: PageProps) {
   const venue = detail.nextOccurrence.venue;
   const isCanceled = detail.event.status === "canceled";
   const displayTitle = toDisplayEventTitle(detail.event.title, detail.event.slug);
+  const canonicalPath = `/events/${canonicalSegment}`;
+  const eventJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "@id": buildSiteUrl(canonicalPath).toString(),
+    name: displayTitle,
+    description: summarizeDescription(detail.event.description),
+    inLanguage: "en-US",
+    keywords: detail.event.categories.map((category) => category.name).join(", ") || undefined,
+    eventStatus: isCanceled
+      ? "https://schema.org/EventCancelled"
+      : "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    startDate: detail.nextOccurrence.start_datetime_utc,
+    endDate: detail.nextOccurrence.end_datetime_utc ?? undefined,
+    isAccessibleForFree: detail.event.is_free,
+    url: buildSiteUrl(canonicalPath).toString(),
+    location: {
+      "@type": "Place",
+      name: venue?.name ?? "Sarasota",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: detail.nextOccurrence.location_text ?? undefined,
+        addressLocality: venue?.area ?? "Sarasota",
+        addressRegion: "FL",
+        addressCountry: "US",
+      },
+    },
+    organizer: {
+      "@type": "Organization",
+      name: "SRQ Happenings",
+      url: buildSiteUrl("/").toString(),
+    },
+    offers: detail.event.external_url
+      ? {
+          "@type": "Offer",
+          url: detail.event.external_url,
+          priceCurrency: "USD",
+          price: detail.event.is_free ? "0" : undefined,
+          availability: isCanceled
+            ? "https://schema.org/SoldOut"
+            : "https://schema.org/InStock",
+        }
+      : undefined,
+  };
 
   return (
     <AppLayout showAmbient>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+      />
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
         <section className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-xl shadow-charcoal/5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5 md:p-8">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide text-muted dark:text-white/50">
