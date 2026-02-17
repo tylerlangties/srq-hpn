@@ -50,7 +50,7 @@ srq-hpn/
 ├── caddy/              # Caddy reverse proxy config (production)
 ├── db/                 # PostgreSQL init scripts
 ├── docs/               # Documentation (database, Celery, etc.)
-├── compose.yml         # Production stack (Caddy, Web, API, DB)
+├── compose.yml         # Production stack (Caddy, Web, API, DB, Redis, Celery)
 ├── compose.dev.yml     # Development stack (+ Redis, Celery, Flower)
 ├── compose.db.yml      # Database only (for local dev without Docker)
 ├── pnpm-workspace.yaml
@@ -168,10 +168,31 @@ Why PostHog vars matter:
 ### 2) Deploy services
 
 ```bash
-docker compose --env-file .env.production up -d db
-docker compose --env-file .env.production up -d --build api
-docker compose --env-file .env.production exec api alembic upgrade head
-docker compose --env-file .env.production up -d
+./scripts/deploy-prod.sh .env.production main
+```
+
+This script performs the production-safe sequence automatically:
+
+- Pull latest branch
+- Validate compose config
+- Build images
+- Start `db` + `redis` and wait for readiness
+- Run `alembic upgrade head`
+- Start full stack (`caddy`, `web`, `api`, `db`, `redis`, `celery-worker`, `celery-beat`)
+- Run post-deploy health checks
+
+### 2.1) First-time production setup (Droplet)
+
+```bash
+cp .env.production.example .env.production
+# edit .env.production with real secrets and domain values
+chmod +x scripts/deploy-prod.sh scripts/check-prod-health.sh
+```
+
+### 2.2) Health check only
+
+```bash
+./scripts/check-prod-health.sh .env.production
 ```
 
 ### 3) Verify after deploy

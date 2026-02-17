@@ -49,6 +49,22 @@ services:
       - srq-network
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: srq-hpn-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - srq-network
+    restart: unless-stopped
+
   api:
     build:
       context: .
@@ -59,11 +75,98 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
       # Superuser - used only for migrations (can modify schema)
       DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-60}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-lax}
+      ENV: ${ENV:-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_ENV: ${LOG_ENV:-production}
+      WEATHER_REFRESH_JITTER_MAX_SECONDS: ${WEATHER_REFRESH_JITTER_MAX_SECONDS:-180}
+      WEATHER_LOCATION_KEY: ${WEATHER_LOCATION_KEY:-sarasota-fl}
+      WEATHER_LATITUDE: ${WEATHER_LATITUDE:-27.3364}
+      WEATHER_LONGITUDE: ${WEATHER_LONGITUDE:--82.5307}
+      WEATHER_CACHE_TTL_HOURS: ${WEATHER_CACHE_TTL_HOURS:-6}
+      WEATHER_DAILY_FETCH_CAP: ${WEATHER_DAILY_FETCH_CAP:-25}
+      WEATHER_RETENTION_DAYS: ${WEATHER_RETENTION_DAYS:-10}
+      WEATHER_FETCH_COUNTER_RETENTION_DAYS: ${WEATHER_FETCH_COUNTER_RETENTION_DAYS:-45}
     # No ports exposed - only accessible via Caddy
     expose:
       - "8000"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - srq-network
+    restart: unless-stopped
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: srq-hpn-celery-worker
+    command: >
+      celery -A app.celery_app worker
+      --loglevel=${CELERY_LOG_LEVEL:-INFO}
+      --concurrency=${CELERY_WORKER_CONCURRENCY:-2}
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
+      DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_ENV: ${LOG_ENV:-production}
+      WEATHER_REFRESH_JITTER_MAX_SECONDS: ${WEATHER_REFRESH_JITTER_MAX_SECONDS:-180}
+      WEATHER_LOCATION_KEY: ${WEATHER_LOCATION_KEY:-sarasota-fl}
+      WEATHER_LATITUDE: ${WEATHER_LATITUDE:-27.3364}
+      WEATHER_LONGITUDE: ${WEATHER_LONGITUDE:--82.5307}
+      WEATHER_CACHE_TTL_HOURS: ${WEATHER_CACHE_TTL_HOURS:-6}
+      WEATHER_DAILY_FETCH_CAP: ${WEATHER_DAILY_FETCH_CAP:-25}
+      WEATHER_RETENTION_DAYS: ${WEATHER_RETENTION_DAYS:-10}
+      WEATHER_FETCH_COUNTER_RETENTION_DAYS: ${WEATHER_FETCH_COUNTER_RETENTION_DAYS:-45}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - srq-network
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: srq-hpn-celery-beat
+    command: >
+      celery -A app.celery_app beat
+      --loglevel=${CELERY_LOG_LEVEL:-INFO}
+      --schedule=/tmp/celerybeat-schedule
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
+      DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-srq_hpn}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_ENV: ${LOG_ENV:-production}
+      WEATHER_REFRESH_JITTER_MAX_SECONDS: ${WEATHER_REFRESH_JITTER_MAX_SECONDS:-180}
+      WEATHER_LOCATION_KEY: ${WEATHER_LOCATION_KEY:-sarasota-fl}
+      WEATHER_LATITUDE: ${WEATHER_LATITUDE:-27.3364}
+      WEATHER_LONGITUDE: ${WEATHER_LONGITUDE:--82.5307}
+      WEATHER_CACHE_TTL_HOURS: ${WEATHER_CACHE_TTL_HOURS:-6}
+      WEATHER_DAILY_FETCH_CAP: ${WEATHER_DAILY_FETCH_CAP:-25}
+      WEATHER_RETENTION_DAYS: ${WEATHER_RETENTION_DAYS:-10}
+      WEATHER_FETCH_COUNTER_RETENTION_DAYS: ${WEATHER_FETCH_COUNTER_RETENTION_DAYS:-45}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - srq-network
@@ -94,5 +197,6 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:
   caddy_data:
   caddy_config:

@@ -2,7 +2,7 @@
 name: SRQ Happenings Launch Roadmap (Updated)
 overview: Launch-optimized roadmap with completed work checked off, current gaps prioritized, and post-launch initiatives preserved as the final step.
 todos: []
-updated: 2026-02-16
+updated: 2026-02-17
 ---
 
 # SRQ Happenings: Launch Roadmap (Updated)
@@ -31,7 +31,7 @@ This roadmap replaces stale assumptions with current implementation status, mark
 - [x] Sitemap, robots, and structured data (JSON-LD) for SEO completeness.
 - [x] Analytics integration (PostHog) and launch event instrumentation.
 - [ ] CI/CD workflows for repeatable checks and deploy readiness.
-- [ ] Production background job strategy parity (prod compose currently does not include Redis/Celery worker/beat).
+- [x] Production background job strategy parity (prod compose includes Redis/Celery worker/beat in `compose.yml`).
 
 ### De-prioritized before launch
 
@@ -115,8 +115,8 @@ This roadmap replaces stale assumptions with current implementation status, mark
 
 ### 5.1 Production background jobs parity
 
-- [ ] Decide and implement production strategy for Redis + Celery worker/beat (compose or external service).
-- [ ] Ensure scheduled scraping/weather tasks run in production context.
+- [x] Decide and implement production strategy for Redis + Celery worker/beat (single-host Compose in `compose.yml`).
+- [x] Ensure scheduled scraping/weather tasks run in production context (`celery-worker` + single `celery-beat` services in production stack).
 
 ### 5.2 CI/CD
 
