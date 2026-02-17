@@ -20,6 +20,31 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Analytics
+
+This app uses PostHog Cloud (`posthog-js`) for Step 4 launch instrumentation.
+
+Currently implemented events:
+
+- `event_viewed`
+- `event_link_clicked`
+- `featured_event_impression`
+- `featured_event_clicked`
+
+Common event properties include `source` and optional venue fields (`venue_id`, `venue_slug`, `venue_name`).
+
+Required env vars:
+
+```bash
+NEXT_PUBLIC_POSTHOG_KEY=<posthog_project_key>
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_ANALYTICS_DEBUG=false
+```
+
+If `NEXT_PUBLIC_POSTHOG_KEY` is not set, analytics events are not sent.
+
+Set `NEXT_PUBLIC_ANALYTICS_DEBUG=true` for local development to log each tracked event to the browser console.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

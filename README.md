@@ -148,6 +148,9 @@ In your production env file or secret manager, set at least:
 DOMAIN=srqhappenings.com
 NEXT_PUBLIC_API_BASE_URL=
 NEXT_PUBLIC_SITE_URL=https://srqhappenings.com
+NEXT_PUBLIC_POSTHOG_KEY=<posthog_project_key>
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_ANALYTICS_DEBUG=false
 POSTGRES_PASSWORD=<secure-value>
 POSTGRES_APP_PASSWORD=<secure-value>
 ```
@@ -155,6 +158,12 @@ POSTGRES_APP_PASSWORD=<secure-value>
 Why `NEXT_PUBLIC_SITE_URL` matters:
 - It powers canonical URLs, sitemap URLs, robots host/sitemap references, and JSON-LD absolute URLs.
 - If this is wrong, SEO signals can point to the wrong origin.
+
+Why PostHog vars matter:
+- `NEXT_PUBLIC_POSTHOG_KEY` enables client-side analytics capture in the web app.
+- `NEXT_PUBLIC_POSTHOG_HOST` should point to your PostHog region host (US Cloud default shown above).
+- If `NEXT_PUBLIC_POSTHOG_KEY` is missing, analytics capture is safely disabled.
+- Set `NEXT_PUBLIC_ANALYTICS_DEBUG=true` locally to print each tracked event to the browser console.
 
 ### 2) Deploy services
 
@@ -175,6 +184,48 @@ curl https://srqhappenings.com/sitemap.xml
 ```
 
 Then complete the SEO launch checks in `docs/seo-implementation-checklist.md` (Search Console property + sitemap submission + URL inspection).
+
+---
+
+## Analytics (PostHog Cloud)
+
+Step 4 launch analytics is now wired in via `posthog-js` in the web app with privacy-first defaults:
+
+- Cookieless mode (`cookieless_mode: "always"`)
+- Autocapture disabled (`autocapture: false`)
+- Automatic pageview/pageleave capture disabled (`capture_pageview: false`, `capture_pageleave: false`)
+- Session recording disabled (`disable_session_recording: true`)
+
+Tracked launch events:
+
+- `event_viewed`
+- `event_link_clicked`
+- `featured_event_impression`
+- `featured_event_clicked`
+
+Current instrumentation points:
+
+- Homepage featured card impression and click
+- Event detail page view
+- Event detail external link click
+
+Common tracked properties:
+
+- `event_id`, `event_slug`, `event_title`
+- `source`, `source_page`, `source_component`
+- `venue_id`, `venue_slug`, `venue_name` (only when present)
+
+Quick verify:
+
+1. Set `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST`.
+2. Open homepage and click featured event card.
+3. Open an event detail page and click the outbound event link.
+4. Confirm those events appear in PostHog Live Events.
+
+Local-only debugging:
+
+- Set `NEXT_PUBLIC_ANALYTICS_DEBUG=true` in local env.
+- Keep `NEXT_PUBLIC_POSTHOG_KEY` unset to avoid sending events while still seeing console logs.
 
 ---
 

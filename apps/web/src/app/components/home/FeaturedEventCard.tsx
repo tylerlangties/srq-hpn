@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import type { EventOccurrenceOut } from "@/types/events";
 import { toEventRouteSegment } from "@/lib/event-display";
+import { trackEvent } from "@/lib/analytics";
 import {
   formatEventTime,
   getEventPriceLabel,
@@ -14,6 +18,9 @@ type Props = {
 };
 
 export default function FeaturedEventCard({ event }: Props) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const hasTrackedImpressionRef = useRef(false);
+
   const time = formatEventTime(event);
   const happeningNow = isHappeningNow(event);
   const startDate = new Date(event.start_datetime_utc);
@@ -24,8 +31,71 @@ export default function FeaturedEventCard({ event }: Props) {
     toEventRouteSegment({ id: event.event.id, slug: event.event.slug })
   )}`;
 
+  useEffect(() => {
+    if (hasTrackedImpressionRef.current) {
+      return;
+    }
+
+    const node = cardRef.current;
+    if (!node || typeof window === "undefined") {
+      return;
+    }
+
+    const trackImpression = () => {
+      if (hasTrackedImpressionRef.current) {
+        return;
+      }
+      trackEvent("featured_event_impression", {
+        event_id: event.event.id,
+        event_slug: event.event.slug,
+        event_title: event.event.title,
+        source: "homepage_hero_featured_card",
+        source_page: "home",
+        source_component: "FeaturedEventCard",
+        venue_id: event.venue?.id,
+        venue_slug: event.venue?.slug,
+        venue_name: event.venue?.name,
+        position: 1,
+        is_featured: true,
+      });
+      hasTrackedImpressionRef.current = true;
+    };
+
+    if (!("IntersectionObserver" in window)) {
+      trackImpression();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && entry.intersectionRatio >= 0.6) {
+          trackImpression();
+          observer.disconnect();
+        }
+      },
+      { threshold: [0.6] }
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    event.event.id,
+    event.event.slug,
+    event.event.title,
+    event.venue?.id,
+    event.venue?.slug,
+    event.venue?.name,
+  ]);
+
   const card = (
-    <div className="relative flex min-h-[24rem] flex-col rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 to-white/70 p-5 shadow-2xl shadow-coral/10 backdrop-blur-sm dark:border-white/10 dark:bg-gradient-to-br dark:from-white/10 dark:to-white/5 dark:shadow-none">
+    <div
+      ref={cardRef}
+      className="relative flex min-h-[24rem] flex-col rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 to-white/70 p-5 shadow-2xl shadow-coral/10 backdrop-blur-sm dark:border-white/10 dark:bg-gradient-to-br dark:from-white/10 dark:to-white/5 dark:shadow-none"
+    >
       <div className="absolute -top-3 -right-3 rounded-full bg-coral px-4 py-1.5 text-xs font-bold text-white shadow-lg dark:bg-gradient-to-r dark:from-purple-500 dark:to-pink-500">
         Featured
       </div>
@@ -58,7 +128,25 @@ export default function FeaturedEventCard({ event }: Props) {
   );
 
   return (
-    <Link href={href} className="block">
+    <Link
+      href={href}
+      className="block"
+      onClick={() => {
+        trackEvent("featured_event_clicked", {
+          event_id: event.event.id,
+          event_slug: event.event.slug,
+          event_title: event.event.title,
+          source: "homepage_hero_featured_card",
+          source_page: "home",
+          source_component: "FeaturedEventCard",
+          venue_id: event.venue?.id,
+          venue_slug: event.venue?.slug,
+          venue_name: event.venue?.name,
+          position: 1,
+          is_featured: true,
+        });
+      }}
+    >
       {card}
     </Link>
   );

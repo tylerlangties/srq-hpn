@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import AppLayout from "../../components/AppLayout";
 import EventCardCompact from "../../components/home/EventCardCompact";
+import EventViewedTracker from "./EventViewedTracker";
+import TrackedExternalEventLink from "./TrackedExternalEventLink";
 import { parseEventRouteSegment, toDisplayEventTitle } from "@/lib/event-display";
 import { buildSiteUrl } from "@/lib/seo";
 import {
@@ -151,6 +153,14 @@ export default async function EventDetailPage({ params }: PageProps) {
 
   return (
     <AppLayout showAmbient>
+      <EventViewedTracker
+        eventId={detail.event.id}
+        eventSlug={detail.event.slug}
+        eventTitle={detail.event.title}
+        venueId={venue?.id}
+        venueSlug={venue?.slug}
+        venueName={venue?.name}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
@@ -182,14 +192,18 @@ export default async function EventDetailPage({ params }: PageProps) {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 {detail.event.external_url ? (
-                  <a
+                  <TrackedExternalEventLink
                     href={detail.event.external_url}
-                    target="_blank"
-                    rel="noreferrer"
                     className="rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-coral/30 transition hover:translate-y-[-1px] hover:shadow-coral/40"
+                    eventId={detail.event.id}
+                    eventSlug={detail.event.slug}
+                    eventTitle={detail.event.title}
+                    venueId={venue?.id}
+                    venueSlug={venue?.slug}
+                    venueName={venue?.name}
                   >
                     {detail.event.is_free ? "View event details" : "Get tickets"}
-                  </a>
+                  </TrackedExternalEventLink>
                 ) : null}
                 {venue?.slug ? (
                   <Link
