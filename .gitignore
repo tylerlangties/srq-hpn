@@ -22,3 +22,6 @@ improvements.md
 seed.py
 test_ics_urls.py
 test_ical_fetch.py
+
+# Private local ops notes
+ops-runbook-private.md

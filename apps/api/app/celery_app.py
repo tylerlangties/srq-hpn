@@ -83,44 +83,75 @@ app.conf.beat_schedule = {
     "collect-vanwezel-daily": {
         "task": "app.tasks.collect_vanwezel",
         "schedule": crontab(minute="0", hour="6"),
-        "kwargs": {"source_id": 1},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 1,
+            "future_only": True,
+            "delay": 5.0,
+        },
     },
     # Mote Marine: Source feed scraper (discovers iCal URLs)
     # Runs daily at 6:15 AM Eastern
     "collect-mote-daily": {
         "task": "app.tasks.collect_mote",
         "schedule": crontab(minute="15", hour="6"),
-        "kwargs": {"source_id": 2},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 2,
+            "future_only": True,
+        },
     },
     "collect-asolorep-daily": {
         "task": "app.tasks.collect_asolorep",
         "schedule": crontab(minute="0", hour="5"),
-        "kwargs": {"source_id": 3},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 3,
+            "future_only": True,
+            "delay": 5.0,
+        },
     },
     "collect-artfestival-daily": {
         "task": "app.tasks.collect_artfestival",
         "schedule": crontab(minute="15", hour="5"),
-        "kwargs": {"source_id": 4},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 4,
+            "future_only": True,
+            "delay": 5.0,
+        },
     },
     "collect-bigtop-daily": {
         "task": "app.tasks.collect_bigtop",
         "schedule": crontab(minute="30", hour="5"),
-        "kwargs": {"source_id": 5},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 5,
+            "future_only": True,
+            "delay": 5.0,
+        },
     },
     "collect-bigwaters-daily": {
         "task": "app.tasks.collect_bigwaters",
         "schedule": crontab(minute="45", hour="5"),
-        "kwargs": {"source_id": 6},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 6,
+            "future_only": True,
+            "delay": 5.0,
+        },
     },
     "collect-sarasotafair-daily": {
         "task": "app.tasks.collect_sarasotafair",
         "schedule": crontab(minute="0", hour="6"),
-        "kwargs": {"source_id": 7},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 7,
+            "future_only": True,
+            "delay": 5.0,
+        },
     },
     "collect-selby-daily": {
         "task": "app.tasks.collect_selby",
         "schedule": crontab(minute="10", hour="6"),
-        "kwargs": {"source_id": 8},  # Update this to your actual source ID
+        "kwargs": {
+            "source_id": 8,
+            "future_only": True,
+            "delay": 5.0,
+        },
     },
     # ---------------------------------------------------------------------
     # Ingestion Tasks

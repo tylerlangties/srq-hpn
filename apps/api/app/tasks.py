@@ -58,7 +58,12 @@ WEATHER_REFRESH_JITTER_MAX_SECONDS = int(
     default_retry_delay=60,  # Wait 60 seconds between retries
     autoretry_for=(requests.RequestException,),  # Auto-retry on network errors
 )
-def collect_vanwezel(self, source_id: int, delay: float = 0.5) -> dict[str, Any]:
+def collect_vanwezel(
+    self,
+    source_id: int,
+    delay: float = 0.5,
+    future_only: bool = False,
+) -> dict[str, Any]:
     """
     Collect Van Wezel Performing Arts Hall events.
 
@@ -88,7 +93,7 @@ def collect_vanwezel(self, source_id: int, delay: float = 0.5) -> dict[str, Any]
         if not source:
             raise ValueError(f"Source {source_id} not found")
 
-        stats = run_collector(db, source, delay=delay)
+        stats = run_collector(db, source, delay=delay, future_only=future_only)
         stats["task_id"] = self.request.id
         stats["started_at"] = datetime.now(UTC).isoformat()
 
@@ -115,7 +120,11 @@ def collect_vanwezel(self, source_id: int, delay: float = 0.5) -> dict[str, Any]
     autoretry_for=(requests.RequestException,),
 )
 def collect_mote(
-    self, source_id: int, months_ahead: int = 2, validate_ical: bool = False
+    self,
+    source_id: int,
+    months_ahead: int = 2,
+    validate_ical: bool = False,
+    future_only: bool = False,
 ) -> dict[str, Any]:
     """
     Collect Mote Marine monthly iCal feeds.
@@ -147,7 +156,11 @@ def collect_mote(
             raise ValueError(f"Source {source_id} not found")
 
         stats = run_collector(
-            db, source, months_ahead=months_ahead, validate_ical=validate_ical
+            db,
+            source,
+            months_ahead=months_ahead,
+            validate_ical=validate_ical,
+            future_only=future_only,
         )
         stats["task_id"] = self.request.id
         stats["started_at"] = datetime.now(UTC).isoformat()
