@@ -2,8 +2,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
-API_ROOT = Path(__file__).resolve().parents[2]
+_here = Path(__file__).resolve()
+API_ROOT = _here.parents[2]
+PROJECT_ROOT = _here.parents[4] if len(_here.parents) > 4 else _here.parents[-1]
 
 ROOT_ENV_LOCAL_PATH = PROJECT_ROOT / ".env.local"
 API_ENV_PATH = API_ROOT / ".env"
