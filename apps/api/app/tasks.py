@@ -168,6 +168,366 @@ def collect_mote(
         db.close()
 
 
+@app.task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(requests.RequestException,),
+)
+def collect_asolorep(
+    self,
+    source_id: int,
+    delay: float = 0.5,
+    max_pages: int = 10,
+    future_only: bool = False,
+    validate_ical: bool = False,
+    categories: str | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    from app.collectors.asolorep import run_collector
+
+    logger.info(
+        "Starting Asolo Rep collector task",
+        extra={"source_id": source_id, "task_id": self.request.id},
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(Source, source_id)
+        if not source:
+            raise ValueError(f"Source {source_id} not found")
+
+        stats = run_collector(
+            db,
+            source,
+            delay=delay,
+            max_pages=max_pages,
+            future_only=future_only,
+            validate_ical=validate_ical,
+            categories=categories,
+            dry_run=dry_run,
+        )
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
+
+        logger.info("Asolo Rep collector task completed", extra=stats)
+        return stats
+
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            "Asolo Rep collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise
+
+    finally:
+        db.close()
+
+
+@app.task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(requests.RequestException,),
+)
+def collect_artfestival(
+    self,
+    source_id: int,
+    delay: float = 0.5,
+    max_pages: int = 10,
+    validate_ical: bool = False,
+    future_only: bool = False,
+    categories: str | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    from app.collectors.artfestival import run_collector
+
+    logger.info(
+        "Starting ArtFestival collector task",
+        extra={"source_id": source_id, "task_id": self.request.id},
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(Source, source_id)
+        if not source:
+            raise ValueError(f"Source {source_id} not found")
+
+        stats = run_collector(
+            db,
+            source,
+            delay=delay,
+            max_pages=max_pages,
+            validate_ical=validate_ical,
+            future_only=future_only,
+            categories=categories,
+            dry_run=dry_run,
+        )
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
+
+        logger.info("ArtFestival collector task completed", extra=stats)
+        return stats
+
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            "ArtFestival collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise
+
+    finally:
+        db.close()
+
+
+@app.task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(requests.RequestException,),
+)
+def collect_bigtop(
+    self,
+    source_id: int,
+    delay: float = 0.25,
+    max_pages: int = 10,
+    validate_ical: bool = False,
+    future_only: bool = False,
+    created_months: int | None = None,
+    categories: str | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    from app.collectors.bigtop import run_collector
+
+    logger.info(
+        "Starting Big Top collector task",
+        extra={"source_id": source_id, "task_id": self.request.id},
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(Source, source_id)
+        if not source:
+            raise ValueError(f"Source {source_id} not found")
+
+        stats = run_collector(
+            db,
+            source,
+            delay=delay,
+            max_pages=max_pages,
+            validate_ical=validate_ical,
+            future_only=future_only,
+            created_months=created_months,
+            categories=categories,
+            dry_run=dry_run,
+        )
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
+
+        logger.info("Big Top collector task completed", extra=stats)
+        return stats
+
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            "Big Top collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise
+
+    finally:
+        db.close()
+
+
+@app.task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(requests.RequestException,),
+)
+def collect_bigwaters(
+    self,
+    source_id: int,
+    delay: float = 0.5,
+    max_pages: int = 10,
+    include_past: bool = False,
+    future_only: bool | None = None,
+    validate_ical: bool = False,
+    categories: str | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    from app.collectors.bigwaters import run_collector
+
+    logger.info(
+        "Starting Big Waters collector task",
+        extra={"source_id": source_id, "task_id": self.request.id},
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(Source, source_id)
+        if not source:
+            raise ValueError(f"Source {source_id} not found")
+
+        stats = run_collector(
+            db,
+            source,
+            delay=delay,
+            max_pages=max_pages,
+            include_past=include_past,
+            future_only=future_only,
+            validate_ical=validate_ical,
+            categories=categories,
+            dry_run=dry_run,
+        )
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
+
+        logger.info("Big Waters collector task completed", extra=stats)
+        return stats
+
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            "Big Waters collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise
+
+    finally:
+        db.close()
+
+
+@app.task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(requests.RequestException,),
+)
+def collect_sarasotafair(
+    self,
+    source_id: int,
+    delay: float = 0.5,
+    max_days: int = 90,
+    chunk_size: int = 10,
+    max_pages: int = 10,
+    validate_ical: bool = False,
+    future_only: bool = False,
+    categories: str | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    from app.collectors.sarasotafair import run_collector
+
+    logger.info(
+        "Starting Sarasota Fair collector task",
+        extra={"source_id": source_id, "task_id": self.request.id},
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(Source, source_id)
+        if not source:
+            raise ValueError(f"Source {source_id} not found")
+
+        stats = run_collector(
+            db,
+            source,
+            delay=delay,
+            max_days=max_days,
+            chunk_size=chunk_size,
+            max_pages=max_pages,
+            validate_ical=validate_ical,
+            future_only=future_only,
+            categories=categories,
+            dry_run=dry_run,
+        )
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
+
+        logger.info("Sarasota Fair collector task completed", extra=stats)
+        return stats
+
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            "Sarasota Fair collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise
+
+    finally:
+        db.close()
+
+
+@app.task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(requests.RequestException,),
+)
+def collect_selby(
+    self,
+    source_id: int,
+    delay: float = 0.5,
+    max_pages: int = 50,
+    filters: str | None = None,
+    validate_ical: bool = False,
+    future_only: bool = False,
+    published_months: int | None = None,
+    categories: str | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    from app.collectors.selby import run_collector
+
+    logger.info(
+        "Starting Selby collector task",
+        extra={"source_id": source_id, "task_id": self.request.id},
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(Source, source_id)
+        if not source:
+            raise ValueError(f"Source {source_id} not found")
+
+        stats = run_collector(
+            db,
+            source,
+            delay=delay,
+            max_pages=max_pages,
+            filters=filters,
+            validate_ical=validate_ical,
+            future_only=future_only,
+            published_months=published_months,
+            categories=categories,
+            dry_run=dry_run,
+        )
+        stats["task_id"] = self.request.id
+        stats["started_at"] = datetime.now(UTC).isoformat()
+
+        logger.info("Selby collector task completed", extra=stats)
+        return stats
+
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            "Selby collector task failed",
+            extra={"source_id": source_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise
+
+    finally:
+        db.close()
+
+
 # =============================================================================
 # Ingestion Tasks
 # These tasks process source feeds (iCal URLs) and ingest events

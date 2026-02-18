@@ -30,7 +30,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-def _resolve_bigtop_source_id(conn) -> int:
+def _resolve_bigtop_source_id(conn) -> int | None:
     rows = conn.execute(
         sa.text(
             """
@@ -47,10 +47,13 @@ def _resolve_bigtop_source_id(conn) -> int:
         },
     ).all()
 
-    if len(rows) != 1:
+    if len(rows) == 0:
+        return None
+
+    if len(rows) > 1:
         matches = [f"id={row.id} name={row.name!r} url={row.url!r}" for row in rows]
         raise RuntimeError(
-            f"Expected exactly one Big Top source row, found {len(rows)}: {matches}"
+            f"Expected at most one Big Top source row, found {len(rows)}: {matches}"
         )
 
     return int(rows[0].id)
@@ -63,19 +66,24 @@ def upgrade() -> None:
     # ── 1. Purge all Big Top events and source feeds ────────────────────
     # CASCADE on event_occurrences and event_categories FKs handles
     # child rows automatically, so a single DELETE is sufficient.
-    result = conn.execute(
-        sa.text("DELETE FROM events WHERE source_id = :sid"),
-        {"sid": bigtop_source_id},
-    )
-    print(f"  Deleted {result.rowcount} Big Top events (source_id={bigtop_source_id})")
+    if bigtop_source_id is not None:
+        result = conn.execute(
+            sa.text("DELETE FROM events WHERE source_id = :sid"),
+            {"sid": bigtop_source_id},
+        )
+        print(
+            f"  Deleted {result.rowcount} Big Top events (source_id={bigtop_source_id})"
+        )
 
-    # Also clear stale source_feeds so the collector re-discovers only
-    # current events from the GraphQL API on the next run.
-    result = conn.execute(
-        sa.text("DELETE FROM source_feeds WHERE source_id = :sid"),
-        {"sid": bigtop_source_id},
-    )
-    print(f"  Deleted {result.rowcount} Big Top source feeds")
+        # Also clear stale source_feeds so the collector re-discovers only
+        # current events from the GraphQL API on the next run.
+        result = conn.execute(
+            sa.text("DELETE FROM source_feeds WHERE source_id = :sid"),
+            {"sid": bigtop_source_id},
+        )
+        print(f"  Deleted {result.rowcount} Big Top source feeds")
+    else:
+        print("  No Big Top source found; skipping Big Top purge step")
 
     # ── 2. Deduplicate remaining events across all sources ───────────────
     # For any (source_id, external_id) group with more than one row,

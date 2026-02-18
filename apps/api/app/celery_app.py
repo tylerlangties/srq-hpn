@@ -92,6 +92,36 @@ app.conf.beat_schedule = {
         "schedule": crontab(minute="15", hour="6"),
         "kwargs": {"source_id": 2},  # Update this to your actual source ID
     },
+    "collect-asolorep-daily": {
+        "task": "app.tasks.collect_asolorep",
+        "schedule": crontab(minute="0", hour="5"),
+        "kwargs": {"source_id": 3},  # Update this to your actual source ID
+    },
+    "collect-artfestival-daily": {
+        "task": "app.tasks.collect_artfestival",
+        "schedule": crontab(minute="15", hour="5"),
+        "kwargs": {"source_id": 4},  # Update this to your actual source ID
+    },
+    "collect-bigtop-daily": {
+        "task": "app.tasks.collect_bigtop",
+        "schedule": crontab(minute="30", hour="5"),
+        "kwargs": {"source_id": 5},  # Update this to your actual source ID
+    },
+    "collect-bigwaters-daily": {
+        "task": "app.tasks.collect_bigwaters",
+        "schedule": crontab(minute="45", hour="5"),
+        "kwargs": {"source_id": 6},  # Update this to your actual source ID
+    },
+    "collect-sarasotafair-daily": {
+        "task": "app.tasks.collect_sarasotafair",
+        "schedule": crontab(minute="0", hour="6"),
+        "kwargs": {"source_id": 7},  # Update this to your actual source ID
+    },
+    "collect-selby-daily": {
+        "task": "app.tasks.collect_selby",
+        "schedule": crontab(minute="10", hour="6"),
+        "kwargs": {"source_id": 8},  # Update this to your actual source ID
+    },
     # ---------------------------------------------------------------------
     # Ingestion Tasks
     # These tasks process source feeds that were discovered by scrapers

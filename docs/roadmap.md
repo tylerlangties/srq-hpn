@@ -27,7 +27,7 @@ This roadmap replaces stale assumptions with current implementation status, mark
 
 - [x] Venue dynamic route reliability fix for Next.js async params handling.
 - [x] Category API and end-to-end category filtering (API + UI + footer links).
-- [x] "Surprise me" endpoint and CTA behavior (currently links to `/events`).
+- [x] "Surprise me" endpoint and CTA behavior (fetches a surprise event, with `/events` fallback on error).
 - [x] Sitemap, robots, and structured data (JSON-LD) for SEO completeness.
 - [x] Analytics integration (PostHog) and launch event instrumentation.
 - [ ] CI/CD workflows for repeatable checks and deploy readiness.
@@ -139,9 +139,9 @@ This roadmap replaces stale assumptions with current implementation status, mark
 
 **Goal:** Improve quality and consistency without blocking go-live.
 
-- [ ] Event card visual consistency pass (grid sizing, responsive parity).
-- [ ] UI consistency pass (spacing, loading states, empty/error states wording).
-- [ ] Scraper CLI contract normalization final pass (ensure all collectors accept documented shared flags).
+- [x] Event card visual consistency pass (grid sizing, responsive parity).
+- [x] UI consistency pass (spacing, loading states, empty/error states wording).
+- [x] Scraper CLI contract normalization final pass (ensure all collectors accept documented shared flags).
 
 **Deliverables:** Better UX consistency and cleaner collector ergonomics.
 
