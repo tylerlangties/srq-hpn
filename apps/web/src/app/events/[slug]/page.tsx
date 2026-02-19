@@ -165,7 +165,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
       />
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:py-16">
         <section className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-xl shadow-charcoal/5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5 md:p-8">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide text-muted dark:text-white/50">
             <span className="rounded-full border border-charcoal/10 bg-sand px-3 py-1 dark:border-white/20 dark:bg-white/10 dark:text-white/80">
@@ -190,11 +190,11 @@ export default async function EventDetailPage({ params }: PageProps) {
                 {presentation.summaryLine}
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 {detail.event.external_url ? (
                   <TrackedExternalEventLink
                     href={detail.event.external_url}
-                    className="rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-coral/30 transition hover:translate-y-[-1px] hover:shadow-coral/40"
+                    className="inline-flex w-full items-center justify-center rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-coral/30 transition hover:translate-y-[-1px] hover:shadow-coral/40 sm:w-auto"
                     eventId={detail.event.id}
                     eventSlug={detail.event.slug}
                     eventTitle={detail.event.title}
@@ -208,7 +208,7 @@ export default async function EventDetailPage({ params }: PageProps) {
                 {venue?.slug ? (
                   <Link
                     href={`/venues/${venue.slug}`}
-                    className="rounded-full border border-charcoal/10 bg-white/70 px-6 py-3 text-sm font-semibold text-charcoal transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                    className="inline-flex w-full items-center justify-center rounded-full border border-charcoal/10 bg-white/70 px-6 py-3 text-sm font-semibold text-charcoal transition hover:bg-white sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                   >
                     More at {venue.name}
                   </Link>
@@ -274,22 +274,6 @@ export default async function EventDetailPage({ params }: PageProps) {
             ))}
           </div>
         </section>
-
-        {presentation.showPlanningTips ? (
-          <section className="mt-10 rounded-3xl border border-white/60 bg-white/80 p-6 backdrop-blur-sm dark:border-white/10 dark:bg-white/5 md:p-8">
-            <h2 className="text-2xl font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">
-              Plan ahead
-            </h2>
-            <div className="mt-5 space-y-3 text-sm text-muted dark:text-white/65">
-              <p className="rounded-2xl border border-charcoal/10 bg-sand/70 p-4 dark:border-white/15 dark:bg-white/5">
-                Parking and arrival details can shift by date. Check the official link on the day of the event.
-              </p>
-              <p className="rounded-2xl border border-charcoal/10 bg-sand/70 p-4 dark:border-white/15 dark:bg-white/5">
-                If this listing has limited details, we still show verified time and location as soon as we have them.
-              </p>
-            </div>
-          </section>
-        ) : null}
 
         {presentation.hasRelatedVenueEvents ? (
           <section className="mt-10">

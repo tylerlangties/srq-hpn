@@ -21,7 +21,6 @@ export type EventDetailPresentation = {
   hasVenue: boolean;
   hasUpcomingSeries: boolean;
   hasRelatedVenueEvents: boolean;
-  showPlanningTips: boolean;
   summaryLine: string;
 };
 
@@ -134,7 +133,6 @@ export function getEventPresentation(detail: EventDetailData): EventDetailPresen
     hasVenue,
     hasUpcomingSeries,
     hasRelatedVenueEvents,
-    showPlanningTips: density === "rich" && hasVenue,
     summaryLine,
   };
 }

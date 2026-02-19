@@ -65,9 +65,6 @@ export default function EventsPageClient() {
         </div>
 
         <div className="mb-6 flex flex-wrap gap-2">
-          <button className="rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white dark:bg-white/10">
-            Next 7 days
-          </button>
           <button
             type="button"
             onClick={() => applySearchParamPatch({ free: showFreeOnly ? null : "true" })}
@@ -78,13 +75,6 @@ export default function EventsPageClient() {
             }`}
           >
             Free events
-          </button>
-          <button
-            type="button"
-            disabled
-            className="rounded-full border border-charcoal/10 px-4 py-2 text-sm font-semibold text-muted/70 dark:border-white/20 dark:text-white/40 cursor-not-allowed"
-          >
-            Family-friendly
           </button>
         </div>
 

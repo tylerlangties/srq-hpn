@@ -40,7 +40,7 @@ export default function SurpriseMeButton({ days = 7 }: Props) {
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="rounded-full border border-charcoal/10 bg-white/80 px-7 py-3.5 text-sm font-semibold text-charcoal shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+      className="inline-flex w-full items-center justify-center rounded-full border border-charcoal/10 bg-white/80 px-6 py-3 text-sm font-semibold text-charcoal shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-7 sm:py-3.5 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
     >
       {loading ? "Finding one..." : "Surprise me"}
     </button>

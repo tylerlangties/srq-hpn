@@ -19,9 +19,9 @@ export default function ThemeSwitcher({ className }: Props) {
     // Return a placeholder with the same dimensions to prevent layout shift
     return (
       <div
-        className={`p-2 rounded-lg bg-white dark:bg-white/5 border-2 border-gray-300 dark:border-white/20 shadow-lg ${className ?? ""}`}
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 ${className ?? ""}`}
       >
-        <div className="w-5 h-5" />
+        <div className="h-5 w-5" />
       </div>
     );
   }
@@ -29,7 +29,7 @@ export default function ThemeSwitcher({ className }: Props) {
   return (
     <button
       onClick={toggleTheme}
-      className={`p-2 rounded-lg bg-white/80 dark:bg-white/5 border-2 border-gray-300/80 dark:border-white/20 shadow-lg hover:shadow-xl transition-all hover:scale-105 ${className ?? ""}`}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 ${className ?? ""}`}
       aria-label="Toggle theme"
     >
       {theme === "light" ? (

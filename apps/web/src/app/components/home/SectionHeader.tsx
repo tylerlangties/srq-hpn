@@ -21,7 +21,7 @@ export default function SectionHeader({
         : "bg-coral/10 text-coral dark:bg-purple-500/20 dark:text-purple-300";
 
   return (
-    <div className="flex items-center justify-between gap-4 mb-6">
+    <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className={`h-8 w-8 rounded-lg grid place-items-center ${toneClasses}`}>
           <span className="text-sm">{icon}</span>
@@ -35,7 +35,7 @@ export default function SectionHeader({
           ) : null}
         </div>
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="w-full sm:w-auto sm:shrink-0">{action}</div> : null}
     </div>
   );
 }

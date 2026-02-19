@@ -11,7 +11,7 @@ type Props = {
 
 export default function VenueDetailClient({ venue, events }: Props) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-12">
+    <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
       <div className="mb-10 rounded-3xl bg-white/80 border border-white/60 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
         <h1 className="text-3xl font-[var(--font-heading)] font-semibold md:text-4xl">{venue.name}</h1>
         <p className="mt-2 text-muted dark:text-white/60">
@@ -21,7 +21,7 @@ export default function VenueDetailClient({ venue, events }: Props) {
         {venue.website ? (
           <a
             href={venue.website}
-            className="mt-3 inline-flex text-sm text-gulf dark:text-cyan-300"
+            className="mt-3 inline-flex items-center justify-center rounded-full border border-gulf/20 bg-gulf/10 px-4 py-2 text-sm font-semibold text-gulf transition hover:bg-gulf/15 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300 dark:hover:bg-cyan-300/20"
             target="_blank"
             rel="noreferrer"
           >

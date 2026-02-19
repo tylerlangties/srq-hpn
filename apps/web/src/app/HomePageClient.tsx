@@ -110,10 +110,11 @@ export default function HomePageClient() {
 
   return (
     <AppLayout showAmbient>
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6">
         <HeroSection
           featuredEvent={featuredEvent}
           eventsThisWeekCount={eventsThisWeek.data}
+          eventsThisWeekError={eventsThisWeek.error}
           weather={weather.data}
           weatherLoading={weather.loading}
           weatherError={weather.error}

@@ -94,7 +94,7 @@ export default function FeaturedEventCard({ event }: Props) {
   const card = (
     <div
       ref={cardRef}
-      className="relative flex min-h-[24rem] flex-col rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 to-white/70 p-5 shadow-2xl shadow-coral/10 backdrop-blur-sm dark:border-white/10 dark:bg-gradient-to-br dark:from-white/10 dark:to-white/5 dark:shadow-none"
+      className="relative flex min-h-[20rem] flex-col rounded-3xl border border-white/60 bg-gradient-to-br from-white/90 to-white/70 p-5 shadow-2xl shadow-coral/10 backdrop-blur-sm sm:min-h-[24rem] dark:border-white/10 dark:bg-gradient-to-br dark:from-white/10 dark:to-white/5 dark:shadow-none"
     >
       <div className="absolute -top-3 -right-3 rounded-full bg-coral px-4 py-1.5 text-xs font-bold text-white shadow-lg dark:bg-gradient-to-r dark:from-purple-500 dark:to-pink-500">
         Featured
