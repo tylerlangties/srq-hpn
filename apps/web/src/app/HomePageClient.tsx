@@ -7,6 +7,7 @@ import HeroSection from "./components/home/HeroSection";
 import SectionHeader from "./components/home/SectionHeader";
 import EventCardLarge from "./components/home/EventCardLarge";
 import EventCardCompact from "./components/home/EventCardCompact";
+import EventLoadError from "./components/home/EventLoadError";
 import ArticlesSection from "./components/home/ArticlesSection";
 import NewsletterCTA from "./components/home/NewsletterCTA";
 import { useEventsForDay, useEventsForRange, useEventsThisWeekCount } from "./hooks/useEvents";
@@ -45,11 +46,7 @@ function renderEventsSection(
   emptyMessage: string
 ) {
   if (state.error) {
-    return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-        {state.error}
-      </div>
-    );
+    return <EventLoadError message={state.error} />;
   }
 
   if (state.loading) {

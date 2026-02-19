@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AppLayout from "../components/AppLayout";
 import EventCardLarge from "../components/home/EventCardLarge";
+import EventLoadError from "../components/home/EventLoadError";
 import { useCategories, useEventsForRange } from "../hooks/useEvents";
 import { addDays, toYmd } from "@/lib/dates";
 
@@ -118,9 +119,7 @@ export default function EventsPageClient() {
         ) : null}
 
         {events.error ? (
-          <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-5 text-sm text-red-700 dark:text-red-300">
-            {events.error}
-          </div>
+          <EventLoadError message={events.error} />
         ) : events.loading ? (
           <div className="grid gap-4 lg:grid-cols-2">
             {[0, 1, 2, 3].map((key) => (

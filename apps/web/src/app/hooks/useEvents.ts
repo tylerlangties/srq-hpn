@@ -29,6 +29,25 @@ type EventDiscoveryFilters = {
   venue?: string | null;
 };
 
+function getFriendlyEventErrorMessage(err: unknown): string {
+  const fallback = "Please check your connection and try again in a moment.";
+  const message = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+
+  if (message.includes("failed to fetch") || message.includes("network")) {
+    return "We are having trouble reaching the events service. Please check your connection and try again.";
+  }
+
+  if (message.includes("api 5")) {
+    return "Our events service is temporarily unavailable. Please try again shortly.";
+  }
+
+  if (message.includes("api 4")) {
+    return "We could not load events for this request.";
+  }
+
+  return fallback;
+}
+
 export function useEventsForDay(day: string): EventsState {
   const [state, setState] = useState<EventsState>({
     data: null,
@@ -48,7 +67,7 @@ export function useEventsForDay(day: string): EventsState {
         if (!cancelled) {
           setState({
             data: null,
-            error: err instanceof Error ? err.message : String(err),
+            error: getFriendlyEventErrorMessage(err),
             loading: false,
           });
         }
@@ -96,7 +115,7 @@ export function useEventsForRange(
         if (!cancelled) {
           setState({
             data: null,
-            error: err instanceof Error ? err.message : String(err),
+            error: getFriendlyEventErrorMessage(err),
             loading: false,
           });
         }
@@ -132,7 +151,7 @@ export function useEventsThisWeekCount(): EventCountState {
         if (!cancelled) {
           setState({
             data: null,
-            error: err instanceof Error ? err.message : String(err),
+            error: getFriendlyEventErrorMessage(err),
             loading: false,
           });
         }
