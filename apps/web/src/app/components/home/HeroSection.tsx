@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { EventOccurrenceOut } from "@/types/events";
 import type { WeatherPayload } from "@/lib/weather";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 import FeaturedEventCard from "./FeaturedEventCard";
 import SurpriseMeButton from "./SurpriseMeButton";
 import WeatherWidget from "./WeatherWidget";
@@ -48,10 +49,10 @@ export default function HeroSection({
            A curated guide to festivals, live music, art walks, food pop-ups,
             and everything in between.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className={SHARED_RESPONSIVE.buttonGroup}>
             <Link
               href="/events"
-              className="inline-flex w-full items-center justify-center rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-coral/40 transition-all hover:translate-y-[-2px] hover:shadow-coral/50 sm:w-auto sm:px-7 sm:py-3.5 dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 dark:shadow-purple-500/30"
+              className={`inline-flex ${SHARED_RESPONSIVE.buttonWidth} items-center justify-center rounded-full bg-coral ${SHARED_RESPONSIVE.buttonPadding} text-sm font-semibold text-white shadow-lg shadow-coral/40 transition-all hover:translate-y-[-2px] hover:shadow-coral/50 dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 dark:shadow-purple-500/30`}
             >
               Browse events
             </Link>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import ThemeSwitcher from "./ThemeSwitcher";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,7 +30,7 @@ export default function Header() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-8 text-sm font-medium text-muted dark:text-white/60 md:flex">
+        <nav className={`${SHARED_RESPONSIVE.desktopNav} items-center gap-8 text-sm font-medium text-muted dark:text-white/60`}>
           <Link href="/events" className="transition hover:text-charcoal dark:hover:text-white">
             Events
           </Link>
@@ -48,7 +49,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen((value) => !value)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white md:hidden dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+            className={`${SHARED_RESPONSIVE.mobileOnly} inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-site-nav"
             aria-label="Toggle navigation menu"
@@ -88,7 +89,7 @@ export default function Header() {
           </button>
           <Link
             href="/login"
-            className="hidden md:block rounded-full border border-charcoal/10 dark:border-white/20 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-medium text-charcoal dark:text-white shadow-sm hover:bg-white dark:hover:bg-white/10 transition"
+            className={`${SHARED_RESPONSIVE.desktopOnlyBlock} rounded-full border border-charcoal/10 dark:border-white/20 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-medium text-charcoal dark:text-white shadow-sm hover:bg-white dark:hover:bg-white/10 transition`}
           >
             Sign in
           </Link>
@@ -97,7 +98,7 @@ export default function Header() {
       </div>
 
       {mobileMenuOpen ? (
-        <div id="mobile-site-nav" className="border-t border-white/50 px-6 py-3 md:hidden dark:border-white/10">
+        <div id="mobile-site-nav" className={`${SHARED_RESPONSIVE.mobileOnly} border-t border-white/50 px-6 py-3 dark:border-white/10`}>
           <nav className="mx-auto flex w-full max-w-7xl flex-col gap-2 text-sm font-semibold text-charcoal dark:text-white/90">
             <Link
               href="/events"

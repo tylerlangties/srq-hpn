@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiGet } from "@/lib/api";
 import { API_PATHS, withQuery } from "@/lib/api-paths";
 import { toEventRouteSegment } from "@/lib/event-display";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 import type { EventOccurrenceOut } from "@/types/events";
 
 type Props = {
@@ -40,7 +41,7 @@ export default function SurpriseMeButton({ days = 7 }: Props) {
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="inline-flex w-full items-center justify-center rounded-full border border-charcoal/10 bg-white/80 px-6 py-3 text-sm font-semibold text-charcoal shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-7 sm:py-3.5 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+      className={`inline-flex ${SHARED_RESPONSIVE.buttonWidth} items-center justify-center rounded-full border border-charcoal/10 bg-white/80 ${SHARED_RESPONSIVE.buttonPadding} text-sm font-semibold text-charcoal shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
     >
       {loading ? "Finding one..." : "Surprise me"}
     </button>

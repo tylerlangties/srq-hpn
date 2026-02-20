@@ -15,6 +15,7 @@ import {
   resolveEventRoute,
   summarizeDescription,
 } from "../_lib/detail-data";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -190,11 +191,11 @@ export default async function EventDetailPage({ params }: PageProps) {
                 {presentation.summaryLine}
               </p>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <div className={`mt-6 ${SHARED_RESPONSIVE.buttonGroup}`}>
                 {detail.event.external_url ? (
                   <TrackedExternalEventLink
                     href={detail.event.external_url}
-                    className="inline-flex w-full items-center justify-center rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-coral/30 transition hover:translate-y-[-1px] hover:shadow-coral/40 sm:w-auto"
+                    className={`inline-flex ${SHARED_RESPONSIVE.buttonWidth} items-center justify-center rounded-full bg-coral ${SHARED_RESPONSIVE.buttonPadding} text-sm font-semibold text-white shadow-lg shadow-coral/30 transition hover:translate-y-[-1px] hover:shadow-coral/40`}
                     eventId={detail.event.id}
                     eventSlug={detail.event.slug}
                     eventTitle={detail.event.title}
@@ -208,7 +209,7 @@ export default async function EventDetailPage({ params }: PageProps) {
                 {venue?.slug ? (
                   <Link
                     href={`/venues/${venue.slug}`}
-                    className="inline-flex w-full items-center justify-center rounded-full border border-charcoal/10 bg-white/70 px-6 py-3 text-sm font-semibold text-charcoal transition hover:bg-white sm:w-auto dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                    className={`inline-flex ${SHARED_RESPONSIVE.buttonWidth} items-center justify-center rounded-full border border-charcoal/10 bg-white/70 ${SHARED_RESPONSIVE.buttonPadding} text-sm font-semibold text-charcoal transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
                   >
                     More at {venue.name}
                   </Link>
