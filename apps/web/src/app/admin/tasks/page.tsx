@@ -79,7 +79,7 @@ export default function AdminTaskRunsPage() {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8 space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Task Runs</h1>
           <p className="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -137,7 +137,7 @@ export default function AdminTaskRunsPage() {
 
       {data && !loading && !error && (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Total Runs</p>
               <p className="mt-1 text-3xl font-bold text-slate-900 dark:text-slate-100">{data.total_runs}</p>

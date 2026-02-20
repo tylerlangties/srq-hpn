@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { CONTENT_API_PATHS, withQuery } from "@/lib/api-paths";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 import type { ArticleSummary } from "@/types/articles";
 
 type Props = {
@@ -75,7 +76,7 @@ export default function ArticlesSection({ showHeader = true, limit }: Props) {
           </div>
           <Link
             href="/articles"
-            className="hidden sm:block rounded-full border border-charcoal/10 bg-white/80 px-5 py-2.5 text-sm font-medium text-charcoal hover:bg-white transition dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+            className={`${SHARED_RESPONSIVE.desktopOnlyBlock} rounded-full border border-charcoal/10 bg-white/80 px-5 py-2.5 text-sm font-medium text-charcoal hover:bg-white transition dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
           >
             All articles
           </Link>

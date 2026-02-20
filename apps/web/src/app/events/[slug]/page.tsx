@@ -166,7 +166,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
       />
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 md:py-16">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
         <section className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-xl shadow-charcoal/5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5 md:p-8">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide text-muted dark:text-white/50">
             <span className="rounded-full border border-charcoal/10 bg-sand px-3 py-1 dark:border-white/20 dark:bg-white/10 dark:text-white/80">
@@ -291,7 +291,7 @@ export default async function EventDetailPage({ params }: PageProps) {
                 </Link>
               ) : null}
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {detail.moreFromVenue.map((occurrence) => (
                 <EventCardCompact key={occurrence.id} event={occurrence} />
               ))}

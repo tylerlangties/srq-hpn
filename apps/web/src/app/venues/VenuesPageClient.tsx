@@ -3,6 +3,7 @@
 import Link from "next/link";
 import AppLayout from "../components/AppLayout";
 import { useVenues } from "../hooks/useVenues";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 
 export default function VenuesPageClient() {
   const venues = useVenues();
@@ -22,7 +23,7 @@ export default function VenuesPageClient() {
             {venues.error}
           </div>
         ) : venues.loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={SHARED_RESPONSIVE.gridTwoThenThree}>
             {[0, 1, 2, 3, 4, 5].map((key) => (
               <div
                 key={key}
@@ -31,7 +32,7 @@ export default function VenuesPageClient() {
             ))}
           </div>
         ) : venues.data && venues.data.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={SHARED_RESPONSIVE.gridTwoThenThree}>
             {venues.data.map((venue) => (
               <Link
                 key={venue.id}

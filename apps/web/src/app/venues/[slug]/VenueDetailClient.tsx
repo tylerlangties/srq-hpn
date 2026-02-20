@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import EventCardLarge from "../../components/home/EventCardLarge";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 import type { EventOccurrenceOut, VenueDetailOut } from "@/types/events";
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 
 export default function VenueDetailClient({ venue, events }: Props) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+    <div className={`mx-auto w-full max-w-6xl py-12 ${SHARED_RESPONSIVE.containerInset}`}>
       <div className="mb-10 rounded-3xl bg-white/80 border border-white/60 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
         <h1 className="text-3xl font-[var(--font-heading)] font-semibold md:text-4xl">{venue.name}</h1>
         <p className="mt-2 text-muted dark:text-white/60">

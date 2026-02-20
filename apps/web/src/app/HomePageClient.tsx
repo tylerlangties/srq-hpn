@@ -9,10 +9,10 @@ import EventCardLarge from "./components/home/EventCardLarge";
 import EventCardCompact from "./components/home/EventCardCompact";
 import EventLoadError from "./components/home/EventLoadError";
 import ArticlesSection from "./components/home/ArticlesSection";
-import NewsletterCTA from "./components/home/NewsletterCTA";
 import { useEventsForDay, useEventsForRange, useEventsThisWeekCount } from "./hooks/useEvents";
 import { useWeather } from "./hooks/useWeather";
 import { addDays, startOfWeekend, toYmd } from "@/lib/dates";
+import { SHARED_RESPONSIVE } from "@/lib/responsive";
 
 type EventsState = ReturnType<typeof useEventsForDay>;
 
@@ -110,7 +110,7 @@ export default function HomePageClient() {
 
   return (
     <AppLayout showAmbient>
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6">
+      <div className={`relative z-10 mx-auto w-full max-w-7xl ${SHARED_RESPONSIVE.containerInset}`}>
         <HeroSection
           featuredEvent={featuredEvent}
           eventsThisWeekCount={eventsThisWeek.data}
@@ -189,7 +189,7 @@ export default function HomePageClient() {
 
           {renderEventsSection(
             weekendEvents,
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className={SHARED_RESPONSIVE.gridTwoThenFour}>
               {[0, 1, 2, 3].map((key) => (
                 <div
                   key={key}
@@ -198,7 +198,7 @@ export default function HomePageClient() {
               ))}
             </div>,
             (events) => (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className={SHARED_RESPONSIVE.gridTwoThenFour}>
                 {events.slice(0, 4).map((event) => (
                   <EventCardCompact key={event.id} event={event} />
                 ))}
@@ -209,7 +209,6 @@ export default function HomePageClient() {
         </section>
 
         <ArticlesSection />
-        <NewsletterCTA />
       </div>
     </AppLayout>
   );

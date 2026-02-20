@@ -29,7 +29,7 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
       : "from-coral/10 to-gulf/10 border-coral/30 hover:shadow-coral/10 dark:from-purple-600/10 dark:to-pink-600/10 dark:border-purple-500/30";
 
   const baseClasses =
-    "group flex h-full w-full max-w-full min-h-40 cursor-pointer flex-col overflow-hidden rounded-2xl border p-3 transition-all backdrop-blur-sm sm:min-h-44 sm:p-4";
+    "group flex h-full w-full max-w-full min-h-40 cursor-pointer flex-col overflow-hidden rounded-2xl border p-3 transition-all backdrop-blur-sm md:min-h-44 md:p-4";
 
   const bgClasses = featured
     ? `bg-gradient-to-r ${toneClasses} border-2 hover:shadow-lg`
@@ -38,9 +38,9 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
   const card = (
     <article className={`${baseClasses} ${bgClasses}`}>
       <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-stretch">
-        <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3 md:gap-4">
           <div
-            className={`h-12 w-12 rounded-xl grid place-items-center text-white shadow-lg flex-shrink-0 sm:h-14 sm:w-14 ${
+            className={`h-12 w-12 rounded-xl grid place-items-center text-white shadow-lg flex-shrink-0 md:h-14 md:w-14 ${
               tone === "palm"
                 ? "bg-palm dark:bg-gradient-to-br dark:from-emerald-500 dark:to-teal-500"
                 : "bg-coral dark:bg-gradient-to-br dark:from-purple-600 dark:to-pink-500"
@@ -49,13 +49,13 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
             <span className="text-xs font-medium">
               {time.includes("AM") ? "AM" : "PM"}
             </span>
-            <span className="-mt-1 text-xs font-bold sm:text-sm">
+            <span className="-mt-1 text-xs font-bold md:text-sm">
               {time.split(":")[0]}
             </span>
           </div>
           <div className="flex h-full min-w-0 flex-1 flex-col">
             <div className="mb-1 flex flex-wrap items-start gap-2">
-              <h3 className="min-w-0 flex-1 line-clamp-2 break-words text-base font-[var(--font-heading)] font-bold text-charcoal transition group-hover:text-coral sm:text-lg dark:text-white dark:group-hover:text-purple-300">
+              <h3 className="min-w-0 flex-1 line-clamp-2 break-words text-base font-[var(--font-heading)] font-bold text-charcoal transition group-hover:text-coral md:text-lg dark:text-white dark:group-hover:text-purple-300">
                 {event.event.title}
               </h3>
               {featured ? (
@@ -67,11 +67,11 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
             <p className="mb-2 line-clamp-2 break-words text-sm text-muted dark:text-white/50">
               {event.event.description ?? "Details coming soon."}
             </p>
-            <div className="mt-auto flex min-w-0 flex-col items-start gap-1 text-xs text-muted sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 dark:text-white/40">
+            <div className="mt-auto flex min-w-0 flex-col items-start gap-1 text-xs text-muted md:flex-row md:flex-wrap md:items-center md:gap-2 dark:text-white/40">
               <span className="block max-w-full min-w-0 truncate">📍 {venue}</span>
-              <span className="hidden sm:inline">·</span>
+              <span className="hidden md:inline">·</span>
               <span className="block max-w-full min-w-0 truncate">{area}</span>
-              <span className="hidden sm:inline">·</span>
+              <span className="hidden md:inline">·</span>
               <span className="rounded-full bg-sand px-2 py-0.5 text-charcoal dark:bg-white/10 dark:text-white/60">
                 {priceLabel}
               </span>
