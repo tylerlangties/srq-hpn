@@ -40,6 +40,7 @@ export const API_PATHS = {
     unresolvedVenueOccurrences: (locationText: string) =>
       `/api/admin/venues/unresolved/${encodeURIComponent(locationText)}/occurrences`,
     linkVenue: "/api/admin/venues/link",
+    taskRuns: "/api/admin/tasks/runs",
   },
 } as const;
 

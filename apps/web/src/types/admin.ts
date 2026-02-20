@@ -78,3 +78,45 @@ export type DuplicateGroupOut = {
   occurrences: number;
   event_ids: number[];
 };
+
+export type TaskRunOut = {
+  id: number;
+  task_id: string;
+  task_name: string;
+  status: string;
+  queue: string | null;
+  worker_hostname: string | null;
+  retries: number | null;
+  started_at: string;
+  finished_at: string | null;
+  runtime_ms: number | null;
+  error: string | null;
+};
+
+export type TaskRunDayPoint = {
+  day: string;
+  success: number;
+  failure: number;
+  other: number;
+  total: number;
+};
+
+export type TaskRunTaskPoint = {
+  task_name: string;
+  total: number;
+  success: number;
+  failure: number;
+  last_run_at: string | null;
+};
+
+export type TaskRunDashboardOut = {
+  generated_at: string;
+  window_days: number;
+  total_runs: number;
+  success_count: number;
+  failure_count: number;
+  success_rate: number;
+  recent_runs: TaskRunOut[];
+  day_series: TaskRunDayPoint[];
+  task_series: TaskRunTaskPoint[];
+};

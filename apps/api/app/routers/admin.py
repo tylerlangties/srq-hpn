@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, delete, func, or_, select
+from sqlalchemy import and_, case, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_role
@@ -15,6 +15,7 @@ from app.models.event import Event
 from app.models.event_occurrence import EventOccurrence
 from app.models.source import Source
 from app.models.source_feed import SourceFeed
+from app.models.task_run import TaskRun
 from app.models.user import UserRole
 from app.services.ingest_upsert import upsert_event_and_occurrence
 
@@ -78,6 +79,48 @@ class HideBulkRequest(BaseModel):
         None, description="Event external_ids (requires source_name)"
     )
     hidden: bool = Field(True, description="Set hidden=True to hide, False to unhide")
+
+
+class TaskRunOut(BaseModel):
+    id: int
+    task_id: str
+    task_name: str
+    status: str
+    queue: str | None
+    worker_hostname: str | None
+    retries: int | None
+    started_at: datetime
+    finished_at: datetime | None
+    runtime_ms: int | None
+    error: str | None
+
+
+class TaskRunDayPoint(BaseModel):
+    day: str
+    success: int
+    failure: int
+    other: int
+    total: int
+
+
+class TaskRunTaskPoint(BaseModel):
+    task_name: str
+    total: int
+    success: int
+    failure: int
+    last_run_at: datetime | None
+
+
+class TaskRunDashboardOut(BaseModel):
+    generated_at: datetime
+    window_days: int
+    total_runs: int
+    success_count: int
+    failure_count: int
+    success_rate: float
+    recent_runs: list[TaskRunOut]
+    day_series: list[TaskRunDayPoint]
+    task_series: list[TaskRunTaskPoint]
 
 
 @router.get("/events/search", response_model=list[EventSearchOut])
@@ -282,6 +325,126 @@ def list_event_duplicates(
         )
         for r in rows
     ]
+
+
+@router.get("/tasks/runs", response_model=TaskRunDashboardOut)
+def get_task_runs_dashboard(
+    days: int = Query(7, ge=1, le=60),
+    limit: int = Query(50, ge=10, le=200),
+    db: Session = Depends(get_db),
+) -> TaskRunDashboardOut:
+    now = datetime.now(UTC)
+    since = now - timedelta(days=days)
+
+    base_filter = TaskRun.started_at >= since
+
+    total_runs = db.scalar(select(func.count(TaskRun.id)).where(base_filter)) or 0
+    success_count = (
+        db.scalar(
+            select(func.count(TaskRun.id)).where(
+                base_filter, TaskRun.status == "success"
+            )
+        )
+        or 0
+    )
+    failure_count = (
+        db.scalar(
+            select(func.count(TaskRun.id)).where(
+                base_filter, TaskRun.status == "failure"
+            )
+        )
+        or 0
+    )
+
+    success_rate = (success_count / total_runs) if total_runs > 0 else 0.0
+
+    day_rows = db.execute(
+        select(
+            func.date_trunc("day", TaskRun.started_at).label("day_bucket"),
+            func.count(TaskRun.id).label("total"),
+            func.sum(case((TaskRun.status == "success", 1), else_=0)).label("success"),
+            func.sum(case((TaskRun.status == "failure", 1), else_=0)).label("failure"),
+        )
+        .where(base_filter)
+        .group_by("day_bucket")
+        .order_by("day_bucket")
+    ).all()
+
+    day_series: list[TaskRunDayPoint] = []
+    for row in day_rows:
+        success = int(row.success or 0)
+        failure = int(row.failure or 0)
+        total = int(row.total or 0)
+        other = max(total - success - failure, 0)
+        day_series.append(
+            TaskRunDayPoint(
+                day=row.day_bucket.date().isoformat(),
+                success=success,
+                failure=failure,
+                other=other,
+                total=total,
+            )
+        )
+
+    task_rows = db.execute(
+        select(
+            TaskRun.task_name,
+            func.count(TaskRun.id).label("total"),
+            func.sum(case((TaskRun.status == "success", 1), else_=0)).label("success"),
+            func.sum(case((TaskRun.status == "failure", 1), else_=0)).label("failure"),
+            func.max(TaskRun.started_at).label("last_run_at"),
+        )
+        .where(base_filter)
+        .group_by(TaskRun.task_name)
+        .order_by(func.count(TaskRun.id).desc(), TaskRun.task_name.asc())
+        .limit(12)
+    ).all()
+
+    task_series = [
+        TaskRunTaskPoint(
+            task_name=row.task_name,
+            total=int(row.total or 0),
+            success=int(row.success or 0),
+            failure=int(row.failure or 0),
+            last_run_at=row.last_run_at,
+        )
+        for row in task_rows
+    ]
+
+    recent_rows = db.scalars(
+        select(TaskRun)
+        .where(base_filter)
+        .order_by(TaskRun.started_at.desc())
+        .limit(limit)
+    ).all()
+    recent_runs = [
+        TaskRunOut(
+            id=row.id,
+            task_id=row.task_id,
+            task_name=row.task_name,
+            status=row.status,
+            queue=row.queue,
+            worker_hostname=row.worker_hostname,
+            retries=row.retries,
+            started_at=row.started_at,
+            finished_at=row.finished_at,
+            runtime_ms=row.runtime_ms,
+            error=row.error,
+        )
+        for row in recent_rows
+    ]
+
+    return TaskRunDashboardOut(
+        generated_at=now,
+        window_days=days,
+        total_runs=total_runs,
+        success_count=success_count,
+        failure_count=failure_count,
+        success_rate=success_rate,
+        recent_runs=recent_runs,
+        day_series=day_series,
+        task_series=task_series,
+    )
 
 
 @router.post("/ingest/source/{source_id}")

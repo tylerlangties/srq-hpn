@@ -724,6 +724,18 @@ export default function AdminPage() {
             matched to venues.
           </p>
         </Link>
+
+        <Link
+          href="/admin/tasks"
+          className="block rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 hover:border-cyan-300 dark:hover:border-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all shadow-sm hover:shadow-md"
+        >
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Task Runs Dashboard
+          </h2>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Track Celery run health, failure trends, and recent task outcomes.
+          </p>
+        </Link>
       </div>
     </div>
   );

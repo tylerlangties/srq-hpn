@@ -29,7 +29,7 @@ app = Celery(
     broker=REDIS_URL,
     backend=REDIS_URL,
     # Tell Celery where to find task definitions
-    include=["app.tasks"],
+    include=["app.tasks", "app.task_run_tracking"],
 )
 
 # Celery configuration
