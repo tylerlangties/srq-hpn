@@ -36,6 +36,8 @@ export const API_PATHS = {
     ingestSourceFeeds: (sourceId: number) => `/api/admin/ingest/source/${sourceId}/feeds`,
     unresolvedVenues: "/api/admin/venues/unresolved",
     venues: "/api/admin/venues",
+    venueDetail: (venueId: number) => `/api/admin/venues/${venueId}`,
+    updateVenue: (venueId: number) => `/api/admin/venues/${venueId}`,
     createVenueFromLocation: "/api/admin/venues/create-from-location",
     unresolvedVenueOccurrences: (locationText: string) =>
       `/api/admin/venues/unresolved/${encodeURIComponent(locationText)}/occurrences`,

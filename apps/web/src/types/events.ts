@@ -12,6 +12,8 @@ export type VenueDetailOut = {
   area?: string | null;
   address?: string | null;
   website?: string | null;
+  description?: string | null;
+  hero_image_path?: string | null;
   timezone?: string | null;
 };
 

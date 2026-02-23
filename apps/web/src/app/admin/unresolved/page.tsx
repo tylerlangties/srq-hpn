@@ -22,6 +22,8 @@ export default function UnresolvedLocationsPage() {
   const [linkingVenue, setLinkingVenue] = useState<string | null>(null);
   const [newVenueName, setNewVenueName] = useState("");
   const [newVenueArea, setNewVenueArea] = useState("");
+  const [newVenueDescription, setNewVenueDescription] = useState("");
+  const [newVenueHeroImagePath, setNewVenueHeroImagePath] = useState("");
   const [newVenueAliases, setNewVenueAliases] = useState<string[]>([]);
   const [selectedVenueId, setSelectedVenueId] = useState<number | null>(null);
 
@@ -68,6 +70,8 @@ export default function UnresolvedLocationsPage() {
         location_text: locationText,
         name: newVenueName.trim(),
         area: newVenueArea.trim() || null,
+        description: newVenueDescription.trim() || null,
+        hero_image_path: newVenueHeroImagePath.trim() || null,
         aliases: newVenueAliases.filter((a) => a.trim()).length > 0
           ? newVenueAliases.filter((a) => a.trim())
           : null,
@@ -77,6 +81,8 @@ export default function UnresolvedLocationsPage() {
       setCreatingVenue(null);
       setNewVenueName("");
       setNewVenueArea("");
+      setNewVenueDescription("");
+      setNewVenueHeroImagePath("");
       setNewVenueAliases([]);
       await loadData(); // Refresh list
     } catch (e) {
@@ -208,6 +214,8 @@ export default function UnresolvedLocationsPage() {
                       setLinkingVenue(null);
                       setNewVenueName(group.location_text);
                       setNewVenueArea("");
+                      setNewVenueDescription("");
+                      setNewVenueHeroImagePath("");
                       setNewVenueAliases([]);
                     }}
                     className={`rounded-lg border-2 px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -249,6 +257,30 @@ export default function UnresolvedLocationsPage() {
                         onChange={(e) => setNewVenueArea(e.target.value)}
                         className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
                         placeholder="e.g., Sarasota, Downtown"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                        Description (optional)
+                      </label>
+                      <textarea
+                        value={newVenueDescription}
+                        onChange={(e) => setNewVenueDescription(e.target.value)}
+                        className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                        placeholder="Write a short venue description for SEO and users"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                        Hero Image Path (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={newVenueHeroImagePath}
+                        onChange={(e) => setNewVenueHeroImagePath(e.target.value)}
+                        className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                        placeholder="/uploads/venues/your-venue.webp"
                       />
                     </div>
                     <div>
@@ -309,6 +341,8 @@ export default function UnresolvedLocationsPage() {
                           setCreatingVenue(null);
                           setNewVenueName("");
                           setNewVenueArea("");
+                          setNewVenueDescription("");
+                          setNewVenueHeroImagePath("");
                           setNewVenueAliases([]);
                         }}
                         className="rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"

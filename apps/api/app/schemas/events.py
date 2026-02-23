@@ -21,6 +21,8 @@ class VenueDetailOut(BaseModel):
     area: str | None = None
     address: str | None = None
     website: str | None = None
+    description: str | None = None
+    hero_image_path: str | None = None
     timezone: str | None = None
 
 

@@ -51,6 +51,8 @@ def get_venue(
         area=venue.area,
         address=venue.address,
         website=venue.website,
+        description=venue.description,
+        hero_image_path=venue.hero_image_path,
         timezone=venue.timezone,
     )
 

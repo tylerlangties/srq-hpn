@@ -31,11 +31,35 @@ export type CreateVenueFromLocationRequest = {
   name: string;
   area?: string | null;
   address?: string | null;
+  description?: string | null;
+  hero_image_path?: string | null;
   aliases?: string[] | null;
 };
 
 export type AddAliasRequest = {
   alias: string;
+};
+
+export type AdminVenueDetailOut = {
+  id: number;
+  name: string;
+  slug: string;
+  area?: string | null;
+  address?: string | null;
+  website?: string | null;
+  timezone?: string | null;
+  description?: string | null;
+  hero_image_path?: string | null;
+};
+
+export type UpdateVenueRequest = {
+  name: string;
+  area?: string | null;
+  address?: string | null;
+  website?: string | null;
+  timezone?: string | null;
+  description?: string | null;
+  hero_image_path?: string | null;
 };
 
 export type SourceOut = {

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import EventCardLarge from "../../components/home/EventCardLarge";
 import { SHARED_RESPONSIVE } from "@/lib/responsive";
@@ -10,14 +11,46 @@ type Props = {
   events: EventOccurrenceOut[];
 };
 
+function normalizeVenueImagePath(path: string | null | undefined): string | null {
+  if (!path) {
+    return null;
+  }
+
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
 export default function VenueDetailClient({ venue, events }: Props) {
+  const heroImagePath = normalizeVenueImagePath(venue.hero_image_path);
+
   return (
     <div className={`mx-auto w-full max-w-6xl py-12 ${SHARED_RESPONSIVE.containerInset}`}>
       <div className="mb-10 rounded-3xl bg-white/80 border border-white/60 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="relative mb-6 h-56 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900/40">
+          {heroImagePath ? (
+            <Image
+              src={heroImagePath}
+              alt={`${venue.name} venue photo`}
+              fill
+              sizes="(max-width: 768px) 100vw, 1152px"
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-r from-cyan-200/40 via-sky-100/50 to-amber-100/40 dark:from-cyan-900/30 dark:via-slate-900/40 dark:to-amber-900/20" />
+          )}
+        </div>
         <h1 className="text-3xl font-[var(--font-heading)] font-semibold md:text-4xl">{venue.name}</h1>
         <p className="mt-2 text-muted dark:text-white/60">
           {venue.area ?? "Sarasota"} · {venue.timezone ?? "America/New_York"}
         </p>
+        {venue.description ? (
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-muted dark:text-white/70">{venue.description}</p>
+        ) : null}
         {venue.address ? <p className="mt-2 text-sm text-muted dark:text-white/50">{venue.address}</p> : null}
         {venue.website ? (
           <a

@@ -3,6 +3,12 @@ const SERVER_API_BASE_URL =
 
 const CLIENT_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
+type ApiRequestOptions = {
+  cache?: RequestCache;
+  revalidate?: number;
+  tags?: string[];
+};
+
 function stripTrailingSlash(value: string): string {
   return value.endsWith("/") ? value.slice(0, -1) : value;
 }
@@ -23,12 +29,22 @@ function toApiUrl(path: string): string {
   return `${stripTrailingSlash(CLIENT_API_BASE_URL)}${path}`;
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(toApiUrl(path), {
-    // For dev, this is fine. We'll tighten caching later.
-    cache: "no-store",
+export async function apiGet<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  const fetchOptions: RequestInit & { next?: { revalidate?: number; tags?: string[] } } = {
+    cache:
+      options.cache ??
+      (options.revalidate !== undefined || options.tags !== undefined ? "force-cache" : "no-store"),
     credentials: "include",
-  });
+  };
+
+  if (options.revalidate !== undefined || options.tags !== undefined) {
+    fetchOptions.next = {
+      revalidate: options.revalidate,
+      tags: options.tags,
+    };
+  }
+
+  const res = await fetch(toApiUrl(path), fetchOptions);
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");

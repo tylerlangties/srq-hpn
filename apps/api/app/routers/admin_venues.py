@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import json
 import logging
+import os
+from urllib import error
+from urllib import request as urllib_request
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -14,16 +18,51 @@ from app.models.venue import Venue
 from app.models.venue_alias import VenueAlias
 from app.schemas.admin import (
     AddAliasRequest,
+    AdminVenueDetailOut,
     CreateVenueFromLocationRequest,
     LinkOccurrenceRequest,
     UnresolvedLocationGroup,
     UnresolvedOccurrenceOut,
+    UpdateVenueRequest,
     VenueOut,
 )
 from app.services.ingest_upsert import slugify
 from app.services.venue_resolver import normalize_location
 
 logger = logging.getLogger(__name__)
+
+
+def trigger_venue_revalidation(slug: str) -> None:
+    revalidate_url = os.getenv("WEB_REVALIDATE_VENUES_URL")
+    revalidate_token = os.getenv("WEB_REVALIDATE_TOKEN")
+
+    if not revalidate_url or not revalidate_token:
+        return
+
+    payload = json.dumps({"slug": slug}).encode("utf-8")
+    req = urllib_request.Request(
+        revalidate_url,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "x-revalidate-token": revalidate_token,
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib_request.urlopen(req, timeout=5) as response:
+            if response.status >= 400:
+                logger.warning(
+                    "Venue revalidation returned non-success",
+                    extra={"slug": slug, "status": response.status},
+                )
+    except error.URLError as exc:
+        logger.warning(
+            "Venue revalidation request failed",
+            extra={"slug": slug, "error": str(exc)},
+        )
+
 
 router = APIRouter(
     prefix="/api/admin/venues",
@@ -185,6 +224,8 @@ def create_venue_from_location(
         slug=venue_slug,
         area=request.area,
         address=request.address,
+        description=request.description,
+        hero_image_path=request.hero_image_path,
     )
     db.add(venue)
     db.flush()  # Get the venue ID
@@ -249,6 +290,7 @@ def create_venue_from_location(
         linked_count += 1
 
     db.commit()
+    trigger_venue_revalidation(venue.slug)
 
     logger.info(
         "Created venue from location",
@@ -264,6 +306,63 @@ def create_venue_from_location(
         name=venue.name,
         slug=venue.slug,
         area=venue.area,
+    )
+
+
+@router.get("/{venue_id}", response_model=AdminVenueDetailOut)
+def get_admin_venue_detail(
+    venue_id: int,
+    db: Session = Depends(get_db),
+) -> AdminVenueDetailOut:
+    venue = db.get(Venue, venue_id)
+    if venue is None:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    return AdminVenueDetailOut(
+        id=venue.id,
+        name=venue.name,
+        slug=venue.slug,
+        area=venue.area,
+        address=venue.address,
+        website=venue.website,
+        timezone=venue.timezone,
+        description=venue.description,
+        hero_image_path=venue.hero_image_path,
+    )
+
+
+@router.patch("/{venue_id}", response_model=AdminVenueDetailOut)
+def update_admin_venue(
+    venue_id: int,
+    request: UpdateVenueRequest,
+    db: Session = Depends(get_db),
+) -> AdminVenueDetailOut:
+    venue = db.get(Venue, venue_id)
+    if venue is None:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    venue.name = request.name
+    venue.area = request.area
+    venue.address = request.address
+    venue.website = request.website
+    venue.timezone = request.timezone or "America/New_York"
+    venue.description = request.description
+    venue.hero_image_path = request.hero_image_path
+
+    db.commit()
+    db.refresh(venue)
+    trigger_venue_revalidation(venue.slug)
+
+    return AdminVenueDetailOut(
+        id=venue.id,
+        name=venue.name,
+        slug=venue.slug,
+        area=venue.area,
+        address=venue.address,
+        website=venue.website,
+        timezone=venue.timezone,
+        description=venue.description,
+        hero_image_path=venue.hero_image_path,
     )
 
 

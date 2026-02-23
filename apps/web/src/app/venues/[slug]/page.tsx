@@ -6,7 +6,7 @@ import { apiGet } from "@/lib/api";
 import { API_PATHS, withQuery } from "@/lib/api-paths";
 import { addDays, toYmd } from "@/lib/dates";
 import { buildSiteUrl } from "@/lib/seo";
-import type { EventOccurrenceOut, VenueDetailOut } from "@/types/events";
+import type { EventOccurrenceOut, VenueDetailOut, VenueOut } from "@/types/events";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -14,10 +14,47 @@ type Props = {
 
 const openGraphImage = "/opengraph-image";
 const twitterImage = "/twitter-image";
+const venuePageRevalidateSeconds = 900;
+const venueEventsRevalidateSeconds = 300;
+
+export const revalidate = 900;
+
+async function getVenueSlugs(): Promise<string[]> {
+  try {
+    const venues = await apiGet<VenueOut[]>(API_PATHS.venues.list, {
+      revalidate: venuePageRevalidateSeconds,
+      tags: ["venues"],
+    });
+    return venues.map((venue) => venue.slug);
+  } catch {
+    return [];
+  }
+}
+
+export async function generateStaticParams() {
+  const slugs = await getVenueSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
+
+function normalizeVenueImagePath(path: string | null | undefined): string | null {
+  if (!path) {
+    return null;
+  }
+
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
 
 async function getVenueDetail(slug: string): Promise<VenueDetailOut | null> {
   try {
-    return await apiGet<VenueDetailOut>(API_PATHS.venues.detail(slug));
+    return await apiGet<VenueDetailOut>(API_PATHS.venues.detail(slug), {
+      revalidate: venuePageRevalidateSeconds,
+      tags: ["venues", `venue:${slug}`],
+    });
   } catch {
     return null;
   }
@@ -29,13 +66,21 @@ async function getVenueEvents(
   end: string
 ): Promise<EventOccurrenceOut[]> {
   try {
-    return await apiGet<EventOccurrenceOut[]>(withQuery(API_PATHS.venues.events(slug), { start, end }));
+    return await apiGet<EventOccurrenceOut[]>(withQuery(API_PATHS.venues.events(slug), { start, end }), {
+      revalidate: venueEventsRevalidateSeconds,
+      tags: [`venue:${slug}:events`],
+    });
   } catch {
     return [];
   }
 }
 
 function getVenueDescription(venue: VenueDetailOut): string {
+  if (venue.description?.trim()) {
+    const trimmed = venue.description.trim();
+    return trimmed.length > 160 ? `${trimmed.slice(0, 157)}...` : trimmed;
+  }
+
   const area = venue.area ?? "Sarasota";
   return `Discover upcoming events at ${venue.name} in ${area}, including venue details and schedules.`;
 }
@@ -55,6 +100,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${venue.name} | SRQ Happenings`;
   const description = getVenueDescription(venue);
   const canonicalPath = `/venues/${venue.slug}`;
+  const heroImagePath = normalizeVenueImagePath(venue.hero_image_path);
+  const venueOpenGraphImage = heroImagePath
+    ? buildSiteUrl(heroImagePath).toString()
+    : openGraphImage;
+  const venueTwitterImage = heroImagePath
+    ? buildSiteUrl(heroImagePath).toString()
+    : twitterImage;
 
   return {
     title,
@@ -67,13 +119,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonicalPath,
       type: "website",
-      images: [{ url: openGraphImage }],
+      images: [{ url: venueOpenGraphImage }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [twitterImage],
+      images: [venueTwitterImage],
     },
   };
 }
@@ -93,10 +145,13 @@ export default async function VenueDetailPage({ params }: Props) {
   const start = toYmd(new Date());
   const end = toYmd(addDays(new Date(), 14));
   const events = await getVenueEvents(venue.slug, start, end);
+  const heroImagePath = normalizeVenueImagePath(venue.hero_image_path);
   const venueJsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: venue.name,
+    description: venue.description ?? undefined,
+    image: heroImagePath ? [buildSiteUrl(heroImagePath).toString()] : undefined,
     url: buildSiteUrl(`/venues/${venue.slug}`).toString(),
     sameAs: venue.website ?? undefined,
     address: {

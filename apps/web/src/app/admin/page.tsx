@@ -713,6 +713,18 @@ export default function AdminPage() {
 
         {/* Links Section */}
         <Link
+          href="/admin/venues"
+          className="block rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all shadow-sm hover:shadow-md"
+        >
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Venue Metadata
+          </h2>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Edit venue descriptions, hero image paths, and related SEO metadata.
+          </p>
+        </Link>
+
+        <Link
           href="/admin/unresolved"
           className="block rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all shadow-sm hover:shadow-md"
         >

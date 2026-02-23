@@ -39,6 +39,8 @@ class CreateVenueFromLocationRequest(BaseModel):
     name: str
     area: str | None = None
     address: str | None = None
+    description: str | None = None
+    hero_image_path: str | None = None
     aliases: list[str] | None = None
 
 
@@ -51,6 +53,30 @@ class VenueOut(BaseModel):
     name: str
     slug: str
     area: str | None = None
+
+
+class AdminVenueDetailOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+    area: str | None = None
+    address: str | None = None
+    website: str | None = None
+    timezone: str | None = None
+    description: str | None = None
+    hero_image_path: str | None = None
+
+
+class UpdateVenueRequest(BaseModel):
+    name: str
+    area: str | None = None
+    address: str | None = None
+    website: str | None = None
+    timezone: str | None = None
+    description: str | None = None
+    hero_image_path: str | None = None
 
 
 class AddAliasRequest(BaseModel):
