@@ -15,6 +15,7 @@ from app.routers.admin_venues import router as admin_venues_router  # noqa: E402
 from app.routers.auth import router as auth_router  # noqa: E402
 from app.routers.categories import router as categories_router  # noqa: E402
 from app.routers.events import router as events_router  # noqa: E402
+from app.routers.ingest_bridge import router as ingest_bridge_router  # noqa: E402
 from app.routers.venues import router as venues_router  # noqa: E402
 from app.routers.weather import router as weather_router  # noqa: E402
 
@@ -51,6 +52,7 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(admin_venues_router)
 app.include_router(admin_ingest_items_router)
+app.include_router(ingest_bridge_router)
 
 
 @app.get("/api/health")
