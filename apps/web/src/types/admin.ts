@@ -32,6 +32,7 @@ export type CreateVenueFromLocationRequest = {
   area?: string | null;
   address?: string | null;
   description?: string | null;
+  description_markdown?: string | null;
   hero_image_path?: string | null;
   aliases?: string[] | null;
 };
@@ -49,6 +50,7 @@ export type AdminVenueDetailOut = {
   website?: string | null;
   timezone?: string | null;
   description?: string | null;
+  description_markdown?: string | null;
   hero_image_path?: string | null;
 };
 
@@ -59,6 +61,7 @@ export type UpdateVenueRequest = {
   website?: string | null;
   timezone?: string | null;
   description?: string | null;
+  description_markdown?: string | null;
   hero_image_path?: string | null;
 };
 

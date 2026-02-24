@@ -13,6 +13,7 @@ export type VenueDetailOut = {
   address?: string | null;
   website?: string | null;
   description?: string | null;
+  description_markdown?: string | null;
   hero_image_path?: string | null;
   timezone?: string | null;
 };

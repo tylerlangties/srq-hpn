@@ -40,6 +40,7 @@ class CreateVenueFromLocationRequest(BaseModel):
     area: str | None = None
     address: str | None = None
     description: str | None = None
+    description_markdown: str | None = None
     hero_image_path: str | None = None
     aliases: list[str] | None = None
 
@@ -66,6 +67,7 @@ class AdminVenueDetailOut(BaseModel):
     website: str | None = None
     timezone: str | None = None
     description: str | None = None
+    description_markdown: str | None = None
     hero_image_path: str | None = None
 
 
@@ -76,6 +78,7 @@ class UpdateVenueRequest(BaseModel):
     website: str | None = None
     timezone: str | None = None
     description: str | None = None
+    description_markdown: str | None = None
     hero_image_path: str | None = None
 
 

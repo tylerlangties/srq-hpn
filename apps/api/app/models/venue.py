@@ -19,6 +19,7 @@ class Venue(Base):
     area: Mapped[str | None] = mapped_column(String(100), nullable=True)
     website: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description_markdown: Mapped[str | None] = mapped_column(Text, nullable=True)
     hero_image_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="America/New_York")

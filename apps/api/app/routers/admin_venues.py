@@ -37,6 +37,10 @@ def trigger_venue_revalidation(slug: str) -> None:
     revalidate_token = os.getenv("WEB_REVALIDATE_TOKEN")
 
     if not revalidate_url or not revalidate_token:
+        logger.info(
+            "Venue revalidation skipped due to missing config",
+            extra={"slug": slug},
+        )
         return
 
     payload = json.dumps({"slug": slug}).encode("utf-8")
@@ -52,11 +56,22 @@ def trigger_venue_revalidation(slug: str) -> None:
 
     try:
         with urllib_request.urlopen(req, timeout=5) as response:
+            response_body = response.read().decode("utf-8", errors="replace")
             if response.status >= 400:
                 logger.warning(
                     "Venue revalidation returned non-success",
-                    extra={"slug": slug, "status": response.status},
+                    extra={
+                        "slug": slug,
+                        "status": response.status,
+                        "body": response_body,
+                    },
                 )
+                return
+
+            logger.info(
+                "Venue revalidation request succeeded",
+                extra={"slug": slug, "status": response.status, "body": response_body},
+            )
     except error.URLError as exc:
         logger.warning(
             "Venue revalidation request failed",
@@ -225,6 +240,7 @@ def create_venue_from_location(
         area=request.area,
         address=request.address,
         description=request.description,
+        description_markdown=request.description_markdown,
         hero_image_path=request.hero_image_path,
     )
     db.add(venue)
@@ -327,6 +343,7 @@ def get_admin_venue_detail(
         website=venue.website,
         timezone=venue.timezone,
         description=venue.description,
+        description_markdown=venue.description_markdown,
         hero_image_path=venue.hero_image_path,
     )
 
@@ -347,6 +364,7 @@ def update_admin_venue(
     venue.website = request.website
     venue.timezone = request.timezone or "America/New_York"
     venue.description = request.description
+    venue.description_markdown = request.description_markdown
     venue.hero_image_path = request.hero_image_path
 
     db.commit()
@@ -362,6 +380,7 @@ def update_admin_venue(
         website=venue.website,
         timezone=venue.timezone,
         description=venue.description,
+        description_markdown=venue.description_markdown,
         hero_image_path=venue.hero_image_path,
     )
 

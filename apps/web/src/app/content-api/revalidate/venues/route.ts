@@ -10,6 +10,10 @@ export async function POST(request: Request) {
   const providedToken = request.headers.get("x-revalidate-token");
 
   if (!configuredToken || providedToken !== configuredToken) {
+    console.warn("[revalidate:venues] Unauthorized request", {
+      hasConfiguredToken: Boolean(configuredToken),
+      hasProvidedToken: Boolean(providedToken),
+    });
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
@@ -32,6 +36,14 @@ export async function POST(request: Request) {
   }
 
   revalidatePath("/sitemap.xml");
+
+  console.info("[revalidate:venues] Completed", {
+    slug: slug || null,
+    paths: slug ? ["/venues", `/venues/${slug}`, "/sitemap.xml"] : ["/venues", "/sitemap.xml"],
+    tags: slug
+      ? ["venues", `venue:${slug}`, `venue:${slug}:events`]
+      : ["venues"],
+  });
 
   return NextResponse.json({ ok: true, slug: slug || null });
 }

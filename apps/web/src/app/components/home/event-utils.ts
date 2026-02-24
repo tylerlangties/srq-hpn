@@ -1,21 +1,28 @@
 import type { EventOccurrenceOut } from "@/types/events";
 
+const DISPLAY_LOCALE = "en-US";
+const DISPLAY_TIME_ZONE = "America/New_York";
+
 export function formatEventTime(occ: EventOccurrenceOut): string {
   const start = new Date(occ.start_datetime_utc);
   const end = occ.end_datetime_utc ? new Date(occ.end_datetime_utc) : null;
 
-  const startLabel = start.toLocaleTimeString(undefined, {
+  const startLabel = start.toLocaleTimeString(DISPLAY_LOCALE, {
     hour: "numeric",
     minute: "2-digit",
+    hour12: true,
+    timeZone: DISPLAY_TIME_ZONE,
   });
 
   if (!end) {
     return startLabel;
   }
 
-  const endLabel = end.toLocaleTimeString(undefined, {
+  const endLabel = end.toLocaleTimeString(DISPLAY_LOCALE, {
     hour: "numeric",
     minute: "2-digit",
+    hour12: true,
+    timeZone: DISPLAY_TIME_ZONE,
   });
 
   return `${startLabel} – ${endLabel}`;
@@ -23,10 +30,11 @@ export function formatEventTime(occ: EventOccurrenceOut): string {
 
 export function formatDayLabel(occ: EventOccurrenceOut): string {
   const start = new Date(occ.start_datetime_utc);
-  return start.toLocaleDateString(undefined, {
+  return start.toLocaleDateString(DISPLAY_LOCALE, {
     weekday: "short",
     month: "short",
     day: "numeric",
+    timeZone: DISPLAY_TIME_ZONE,
   });
 }
 

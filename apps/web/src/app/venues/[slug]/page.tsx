@@ -49,6 +49,22 @@ function normalizeVenueImagePath(path: string | null | undefined): string | null
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
 
+function toPlainTextFromMarkdown(markdown: string | null | undefined): string {
+  if (!markdown) {
+    return "";
+  }
+
+  return markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/[*_~>#-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function getVenueDetail(slug: string): Promise<VenueDetailOut | null> {
   try {
     return await apiGet<VenueDetailOut>(API_PATHS.venues.detail(slug), {
@@ -79,6 +95,11 @@ function getVenueDescription(venue: VenueDetailOut): string {
   if (venue.description?.trim()) {
     const trimmed = venue.description.trim();
     return trimmed.length > 160 ? `${trimmed.slice(0, 157)}...` : trimmed;
+  }
+
+  const markdownText = toPlainTextFromMarkdown(venue.description_markdown);
+  if (markdownText) {
+    return markdownText.length > 160 ? `${markdownText.slice(0, 157)}...` : markdownText;
   }
 
   const area = venue.area ?? "Sarasota";
@@ -146,11 +167,13 @@ export default async function VenueDetailPage({ params }: Props) {
   const end = toYmd(addDays(new Date(), 14));
   const events = await getVenueEvents(venue.slug, start, end);
   const heroImagePath = normalizeVenueImagePath(venue.hero_image_path);
+  const markdownDescription = toPlainTextFromMarkdown(venue.description_markdown);
+  const jsonLdDescription = venue.description ?? (markdownDescription || undefined);
   const venueJsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: venue.name,
-    description: venue.description ?? undefined,
+    description: jsonLdDescription,
     image: heroImagePath ? [buildSiteUrl(heroImagePath).toString()] : undefined,
     url: buildSiteUrl(`/venues/${venue.slug}`).toString(),
     sameAs: venue.website ?? undefined,

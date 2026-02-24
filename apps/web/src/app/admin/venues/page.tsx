@@ -112,6 +112,7 @@ export default function AdminVenuesPage() {
         website: venue.website?.trim() || null,
         timezone: venue.timezone?.trim() || "America/New_York",
         description: venue.description?.trim() || null,
+        description_markdown: venue.description_markdown?.trim() || null,
         hero_image_path: heroPathValidation.normalizedPath,
       };
 
@@ -274,6 +275,24 @@ export default function AdminVenuesPage() {
                   rows={5}
                   className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                  Rich Description (Markdown)
+                </label>
+                <textarea
+                  value={venue.description_markdown ?? ""}
+                  onChange={(e) => setVenue({ ...venue, description_markdown: e.target.value })}
+                  rows={10}
+                  placeholder="# About this venue\n\nAdd lists, headers, links, and image markdown."
+                  className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                />
+                <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                  Supports markdown for headings, lists, links, and images. Use local image paths like
+                  {" "}
+                  <code>/uploads/venues/venue-name.webp</code>.
+                </p>
               </div>
 
               <div>
