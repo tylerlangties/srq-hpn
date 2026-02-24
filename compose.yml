@@ -71,6 +71,8 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: srq-hpn-api
     environment:
+      # Required for ingesting events from home
+      BIGTOP_INGEST_TOKEN: ${BIGTOP_INGEST_TOKEN:?BIGTOP_INGEST_TOKEN is required}
       # Limited user - used by the running API (can only read/write data)
       DATABASE_URL: postgresql+psycopg://${POSTGRES_APP_USER:-srq_hpn_app}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-srq_hpn}
       # Superuser - used only for migrations (can modify schema)
