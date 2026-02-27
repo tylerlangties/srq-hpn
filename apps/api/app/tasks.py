@@ -33,6 +33,7 @@ from sqlalchemy import select
 from app.celery_app import app
 from app.db import SessionLocal
 from app.models.source import Source
+from app.services.ingest_sink import DbSink, MultiSink, ProdApiSink
 from app.services.ingest_source_items import ingest_source_items
 from app.services.weather_cache import (
     prune_old_weather_fetch_counters,
@@ -730,6 +731,115 @@ def health_check() -> dict[str, Any]:
         "timestamp": datetime.now(UTC).isoformat(),
         "message": "Celery worker is running",
     }
+
+
+@app.task(bind=True)
+def sync_bigtop_local_bridge(
+    self,
+    source_id: int = 5,
+    limit: int = 500,
+    delay: float = 0.25,
+    future_only: bool = True,
+    created_months: int | None = None,
+    categories: str | None = None,
+    push_prod: bool = True,
+    batch_size: int = 250,
+    timeout_seconds: int = 30,
+    retries: int = 3,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    env = os.getenv("ENV", "development").strip().lower()
+    if env == "production":
+        raise RuntimeError("sync_bigtop_local_bridge is disabled in production")
+
+    if limit < 1:
+        raise ValueError("limit must be at least 1")
+
+    if push_prod and not dry_run:
+        api_base = os.getenv("BIGTOP_INGEST_API_BASE")
+        token = os.getenv("BIGTOP_INGEST_TOKEN")
+        if not api_base:
+            raise ValueError("BIGTOP_INGEST_API_BASE is required when push_prod=true")
+        if not token:
+            raise ValueError("BIGTOP_INGEST_TOKEN is required when push_prod=true")
+    else:
+        api_base = None
+        token = None
+
+    from app.collectors.bigtop import run_collector
+
+    logger.info(
+        "Starting local Big Top bridge sync task",
+        extra={
+            "task_id": self.request.id,
+            "source_id": source_id,
+            "limit": limit,
+            "future_only": future_only,
+            "created_months": created_months,
+            "push_prod": push_prod,
+            "dry_run": dry_run,
+        },
+    )
+
+    db = SessionLocal()
+    try:
+        source = db.get(Source, source_id)
+        if source is None:
+            raise ValueError(f"Source {source_id} not found")
+
+        collector_stats = run_collector(
+            db,
+            source,
+            delay=delay,
+            future_only=future_only,
+            created_months=created_months,
+            categories=categories,
+            dry_run=dry_run,
+        )
+
+        sink: DbSink | MultiSink = DbSink()
+        prod_sink: ProdApiSink | None = None
+
+        if push_prod and not dry_run and api_base and token:
+            prod_sink = ProdApiSink(
+                api_base=api_base,
+                token=token,
+                batch_size=batch_size,
+                timeout_seconds=timeout_seconds,
+                retries=retries,
+            )
+            sink = MultiSink([DbSink(), prod_sink])
+
+        ingest_stats = ingest_source_items(
+            db,
+            source=source,
+            limit=limit,
+            delay=delay,
+            sink=sink,
+        )
+        db.commit()
+
+        result: dict[str, Any] = {
+            "task_id": self.request.id,
+            "source_id": source_id,
+            "collector": collector_stats,
+            "ingest": ingest_stats,
+            "prod_push": {
+                "enabled": bool(prod_sink),
+                "run_id": prod_sink.run_id if prod_sink else None,
+                "received": prod_sink.received if prod_sink else 0,
+                "upserted": prod_sink.upserted if prod_sink else 0,
+                "rejected": prod_sink.rejected if prod_sink else 0,
+            },
+        }
+
+        logger.info("Local Big Top bridge sync task completed", extra=result)
+        return result
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 @app.task(bind=True)

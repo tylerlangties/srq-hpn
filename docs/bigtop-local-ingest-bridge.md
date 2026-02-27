@@ -4,9 +4,10 @@ Temporary bridge for Big Top while production cannot fetch Big Top iCal URLs due
 
 ## Overview
 
-1. Local machine fetches Big Top events and parses iCal.
-2. Local machine posts normalized events to production endpoint.
-3. Production endpoint only upserts events for Big Top source and does not fetch external URLs.
+1. Local machine runs the existing Big Top collector to refresh source feeds.
+2. Local machine runs the existing source-feed ingester (same local DB write path as normal).
+3. During ingest, events fan out to the production endpoint in batches.
+4. Production endpoint only upserts events for Big Top source and does not fetch external URLs.
 
 ## Production Setup
 
@@ -55,6 +56,7 @@ PYTHONPATH=. python scripts/push_bigtop_from_local.py \
   --api-base https://srqhappenings.com \
   --token "$BIGTOP_INGEST_TOKEN" \
   --source-id 5 \
+  --limit 200 \
   --batch-size 250
 ```
 
@@ -65,10 +67,33 @@ cd apps/api
 PYTHONPATH=. python scripts/push_bigtop_from_local.py --dry-run
 ```
 
+Local-only run (no prod push):
+
+```bash
+cd apps/api
+PYTHONPATH=. python scripts/push_bigtop_from_local.py --no-push-prod
+```
+
 ## Suggested Schedule
 
 - Start with manual runs for 1-2 days.
 - Then schedule via cron (every 6-12 hours is usually enough).
+
+## Local Celery Task (Disabled in Prod)
+
+Task name:
+
+- `app.tasks.sync_bigtop_local_bridge`
+
+This task hard-fails when `ENV=production`.
+
+Manual task call example:
+
+```bash
+cd apps/api
+PYTHONPATH=. .venv/bin/celery -A app.celery_app call app.tasks.sync_bigtop_local_bridge \
+  --kwargs='{"source_id": 5, "limit": 200, "future_only": true, "delay": 1.0, "push_prod": true}'
+```
 
 Example cron:
 

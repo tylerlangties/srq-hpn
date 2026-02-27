@@ -24,6 +24,7 @@ from app.services.ingest_bigtop import (
     make_signature,
     prioritize_bigtop_feeds,
 )
+from app.services.ingest_sink import IngestEventPayload, IngestEventSink
 from app.services.ingest_upsert import upsert_event_and_occurrence
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ def ingest_source_items(
     source: Source,
     limit: int = 50,
     delay: float = DEFAULT_FETCH_DELAY,
+    sink: IngestEventSink | None = None,
 ) -> dict[str, int]:
     """
     Fetch and ingest iCal URLs from source_feeds for this source.
@@ -173,6 +175,20 @@ def ingest_source_items(
                             fallback_external_url=item.page_url,
                             categories=explicit_cats or None,
                         )
+                        if sink is not None:
+                            sink.on_event(
+                                source=source,
+                                event=IngestEventPayload(
+                                    external_id=existing_external_id,
+                                    title=ev.summary,
+                                    description=ev.description,
+                                    location=ev.location,
+                                    start_utc=ev.start_utc,
+                                    end_utc=ev.end_utc,
+                                    external_url=ev.url or item.page_url,
+                                    categories=explicit_cats,
+                                ),
+                            )
                         events_ingested_count += 1
                         ingested += 1
                         seen_signatures.add(signature)
@@ -191,6 +207,20 @@ def ingest_source_items(
                     fallback_external_url=item.page_url,
                     categories=explicit_cats or None,
                 )
+                if sink is not None:
+                    sink.on_event(
+                        source=source,
+                        event=IngestEventPayload(
+                            external_id=ev.uid,
+                            title=ev.summary,
+                            description=ev.description,
+                            location=ev.location,
+                            start_utc=ev.start_utc,
+                            end_utc=ev.end_utc,
+                            external_url=ev.url or item.page_url,
+                            categories=explicit_cats,
+                        ),
+                    )
 
                 events_ingested_count += 1
                 ingested += 1
@@ -253,6 +283,9 @@ def ingest_source_items(
             "cf_challenges": cf_challenges,
         },
     )
+
+    if sink is not None:
+        sink.flush()
 
     return {
         "feeds_seen": seen,
