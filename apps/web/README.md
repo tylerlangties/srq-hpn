@@ -22,7 +22,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Analytics
 
-This app uses PostHog Cloud (`posthog-js`) for Step 4 launch instrumentation.
+This app uses Umami for Step 4 launch instrumentation.
 
 Currently implemented events:
 
@@ -36,12 +36,12 @@ Common event properties include `source` and optional venue fields (`venue_id`, 
 Required env vars:
 
 ```bash
-NEXT_PUBLIC_POSTHOG_KEY=<posthog_project_key>
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=<umami_website_id>
+NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js
 NEXT_PUBLIC_ANALYTICS_DEBUG=false
 ```
 
-If `NEXT_PUBLIC_POSTHOG_KEY` is not set, analytics events are not sent.
+If `NEXT_PUBLIC_UMAMI_WEBSITE_ID` is not set, analytics events are not sent.
 
 Set `NEXT_PUBLIC_ANALYTICS_DEBUG=true` for local development to log each tracked event to the browser console.
 

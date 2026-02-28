@@ -29,7 +29,7 @@ This roadmap replaces stale assumptions with current implementation status, mark
 - [x] Category API and end-to-end category filtering (API + UI + footer links).
 - [x] "Surprise me" endpoint and CTA behavior (fetches a surprise event, with `/events` fallback on error).
 - [x] Sitemap, robots, and structured data (JSON-LD) for SEO completeness.
-- [x] Analytics integration (PostHog) and launch event instrumentation.
+- [x] Analytics integration (Umami) and launch event instrumentation.
 - [ ] CI/CD workflows for repeatable checks and deploy readiness.
 - [x] Production background job strategy parity (prod compose includes Redis/Celery worker/beat in `compose.yml`).
 
@@ -97,7 +97,7 @@ This roadmap replaces stale assumptions with current implementation status, mark
 
 **Goal:** Capture baseline product usage and monetization signals from day one.
 
-- [x] Integrate PostHog (cookieless mode) into web app.
+- [x] Integrate Umami into web app.
 - [x] Instrument key events:
   - [x] `event_viewed`
   - [x] `event_link_clicked`
@@ -175,7 +175,7 @@ This roadmap replaces stale assumptions with current implementation status, mark
 - [x] Event detail API/route and card linking.
 - [x] Homepage live events count endpoint integration.
 - [x] Category domain model and ingestion category assignment.
-- [x] PostHog Cloud analytics integration and launch event instrumentation.
+- [x] Umami analytics integration and launch event instrumentation.
 
 ---
 

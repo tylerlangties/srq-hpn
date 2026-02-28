@@ -180,8 +180,8 @@ Notes:
 
 | Variable | Required | Used by | Purpose |
 |---|---|---|---|
-| `NEXT_PUBLIC_POSTHOG_KEY` | Optional but recommended | Web analytics | Enables PostHog capture |
-| `NEXT_PUBLIC_POSTHOG_HOST` | Optional | Web analytics | Defaults to `https://us.i.posthog.com` |
+| `NEXT_PUBLIC_UMAMI_WEBSITE_ID` | Optional but recommended | Web analytics | Enables Umami capture |
+| `NEXT_PUBLIC_UMAMI_SCRIPT_URL` | Optional | Web analytics | Defaults to `https://cloud.umami.is/script.js` |
 | `NEXT_PUBLIC_ANALYTICS_DEBUG` | Optional | Web analytics | Debug logging toggle |
 
 ## 7) Production `.env.production` Template
@@ -221,8 +221,8 @@ REDIS_URL=redis://redis:6379/0
 WEATHER_REFRESH_JITTER_MAX_SECONDS=180
 
 # Analytics
-NEXT_PUBLIC_POSTHOG_KEY=<posthog-key>
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=<umami-website-id>
+NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js
 NEXT_PUBLIC_ANALYTICS_DEBUG=false
 ```
 
@@ -343,4 +343,4 @@ Until CI/CD is in place, this document is the manual deploy runbook for v1.
 - `compose.dev.yml` (reference for Redis/Celery services)
 - `apps/api/app/core/auth.py` (JWT and cookie requirements)
 - `apps/api/app/celery_app.py` and `apps/api/app/tasks.py` (job runtime requirements)
-- `apps/web/src/lib/api.ts`, `apps/web/src/lib/seo.ts`, `apps/web/src/lib/analytics.ts`, `apps/web/src/app/providers/posthog-provider.tsx` (web env requirements)
+- `apps/web/src/lib/api.ts`, `apps/web/src/lib/seo.ts`, `apps/web/src/lib/analytics.ts`, `apps/web/src/app/providers/umami-provider.tsx` (web env requirements)

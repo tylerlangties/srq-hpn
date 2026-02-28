@@ -148,8 +148,8 @@ In your production env file or secret manager, set at least:
 DOMAIN=srqhappenings.com
 NEXT_PUBLIC_API_BASE_URL=
 NEXT_PUBLIC_SITE_URL=https://srqhappenings.com
-NEXT_PUBLIC_POSTHOG_KEY=<posthog_project_key>
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=<umami_website_id>
+NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js
 NEXT_PUBLIC_ANALYTICS_DEBUG=false
 POSTGRES_PASSWORD=<secure-value>
 POSTGRES_APP_PASSWORD=<secure-value>
@@ -159,10 +159,10 @@ Why `NEXT_PUBLIC_SITE_URL` matters:
 - It powers canonical URLs, sitemap URLs, robots host/sitemap references, and JSON-LD absolute URLs.
 - If this is wrong, SEO signals can point to the wrong origin.
 
-Why PostHog vars matter:
-- `NEXT_PUBLIC_POSTHOG_KEY` enables client-side analytics capture in the web app.
-- `NEXT_PUBLIC_POSTHOG_HOST` should point to your PostHog region host (US Cloud default shown above).
-- If `NEXT_PUBLIC_POSTHOG_KEY` is missing, analytics capture is safely disabled.
+Why Umami vars matter:
+- `NEXT_PUBLIC_UMAMI_WEBSITE_ID` enables client-side analytics capture in the web app.
+- `NEXT_PUBLIC_UMAMI_SCRIPT_URL` points to your Umami tracking script host (Cloud default shown above).
+- If `NEXT_PUBLIC_UMAMI_WEBSITE_ID` is missing, analytics capture is safely disabled.
 - Set `NEXT_PUBLIC_ANALYTICS_DEBUG=true` locally to print each tracked event to the browser console.
 
 ### 2) Deploy services
@@ -208,14 +208,9 @@ Then complete the SEO launch checks in `docs/seo-implementation-checklist.md` (S
 
 ---
 
-## Analytics (PostHog Cloud)
+## Analytics (Umami)
 
-Step 4 launch analytics is now wired in via `posthog-js` in the web app with privacy-first defaults:
-
-- Cookieless mode (`cookieless_mode: "always"`)
-- Autocapture disabled (`autocapture: false`)
-- Automatic pageview/pageleave capture disabled (`capture_pageview: false`, `capture_pageleave: false`)
-- Session recording disabled (`disable_session_recording: true`)
+Step 4 launch analytics is now wired in via the Umami browser script in the web app.
 
 Tracked launch events:
 
@@ -238,15 +233,15 @@ Common tracked properties:
 
 Quick verify:
 
-1. Set `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST`.
+1. Set `NEXT_PUBLIC_UMAMI_WEBSITE_ID` and optionally `NEXT_PUBLIC_UMAMI_SCRIPT_URL`.
 2. Open homepage and click featured event card.
 3. Open an event detail page and click the outbound event link.
-4. Confirm those events appear in PostHog Live Events.
+4. Confirm those events appear in your Umami event dashboard.
 
 Local-only debugging:
 
 - Set `NEXT_PUBLIC_ANALYTICS_DEBUG=true` in local env.
-- Keep `NEXT_PUBLIC_POSTHOG_KEY` unset to avoid sending events while still seeing console logs.
+- Keep `NEXT_PUBLIC_UMAMI_WEBSITE_ID` unset to avoid sending events while still seeing console logs.
 
 ---
 

@@ -1,4 +1,12 @@
-import posthog from "posthog-js";
+type UmamiEventPayload = {
+  [key: string]: string | number | boolean | null | undefined;
+};
+
+type UmamiWindow = Window & {
+  umami?: {
+    track: (eventName: string, payload?: UmamiEventPayload) => void;
+  };
+};
 
 export type AnalyticsEventName =
   | "event_viewed"
@@ -27,13 +35,18 @@ export function trackEvent(eventName: AnalyticsEventName, props: EventAnalyticsP
 
   const analyticsDebug = process.env.NEXT_PUBLIC_ANALYTICS_DEBUG === "true";
   if (analyticsDebug) {
-    const willSend = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
-    console.info("[analytics]", eventName, { ...props, _posthog_send_enabled: willSend });
+    const willSend = Boolean(process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID);
+    console.info("[analytics]", eventName, { ...props, _umami_send_enabled: willSend });
   }
 
-  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+  if (!process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID) {
     return;
   }
 
-  posthog.capture(eventName, props);
+  const umami = (window as UmamiWindow).umami;
+  if (!umami) {
+    return;
+  }
+
+  umami.track(eventName, props);
 }

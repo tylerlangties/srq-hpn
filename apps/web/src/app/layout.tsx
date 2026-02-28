@@ -6,7 +6,7 @@ import {
   Instrument_Serif,
 } from "next/font/google";
 import "./globals.css";
-import { PostHogProvider } from "./providers/posthog-provider";
+import { UmamiProvider } from "./providers/umami-provider";
 import { ThemeProvider } from "./providers/theme-provider";
 import { buildSiteUrl, getSiteUrl } from "@/lib/seo";
 
@@ -93,9 +93,9 @@ export default function RootLayout({
       <body
         className={`${bricolage.variable} ${dmSans.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
       >
-        <PostHogProvider>
+        <UmamiProvider>
           <ThemeProvider>{children}</ThemeProvider>
-        </PostHogProvider>
+        </UmamiProvider>
       </body>
     </html>
   );
