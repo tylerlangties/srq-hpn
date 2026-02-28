@@ -55,7 +55,7 @@ export default function WeatherWidget({ weather, loading, error }: Props) {
         <div className="text-sm text-muted dark:text-white/50">
           The forecast took a beach day 🏖️
         </div>
-        <p className="mt-2 text-xs text-muted dark:text-white/40">
+        <p className="mt-2 text-xs text-muted dark:text-white/60">
           We&apos;ll reel it back in soon.
         </p>
       </div>

@@ -68,7 +68,7 @@ export default function EventsPageClient() {
           <button
             type="button"
             onClick={() => applySearchParamPatch({ free: showFreeOnly ? null : "true" })}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b] ${
               showFreeOnly
                 ? "bg-charcoal text-white dark:bg-white/10 dark:text-white"
                 : "border border-charcoal/10 text-charcoal dark:border-white/20 dark:text-white"
@@ -83,7 +83,7 @@ export default function EventsPageClient() {
             <button
               type="button"
               onClick={() => applySearchParamPatch({ category: null })}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b] ${
                 selectedCategory
                   ? "border border-charcoal/10 text-charcoal dark:border-white/20 dark:text-white"
                   : "bg-charcoal text-white dark:bg-white/10 dark:text-white"
@@ -96,7 +96,7 @@ export default function EventsPageClient() {
                 key={category.id}
                 type="button"
                 onClick={() => applySearchParamPatch({ category: category.slug })}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b] ${
                   selectedCategory === category.slug
                     ? "bg-charcoal text-white dark:bg-white/10 dark:text-white"
                     : "border border-charcoal/10 text-charcoal dark:border-white/20 dark:text-white"

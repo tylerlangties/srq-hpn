@@ -85,7 +85,7 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="mt-12 pt-8 border-t border-charcoal/10 dark:border-white/10 text-center text-sm text-muted dark:text-white/40">
+        <div className="mt-12 pt-8 border-t border-charcoal/10 dark:border-white/10 text-center text-sm text-muted dark:text-white/60">
           © 2026 SRQ Happenings. Made with ☀️ in Sarasota.
         </div>
       </div>

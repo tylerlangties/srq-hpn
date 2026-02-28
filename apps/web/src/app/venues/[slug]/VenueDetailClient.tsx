@@ -91,8 +91,14 @@ export default function VenueDetailClient({ venue, events }: Props) {
                     );
                   },
                   a: ({ href, children }) => (
-                    <a href={href} target="_blank" rel="noreferrer noopener">
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label={`${href ?? "External link"} (opens in a new tab)`}
+                    >
                       {children}
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
                   ),
                 }}
@@ -106,11 +112,13 @@ export default function VenueDetailClient({ venue, events }: Props) {
         {venue.website ? (
           <a
             href={venue.website}
-            className="mt-3 inline-flex items-center justify-center rounded-full border border-gulf/20 bg-gulf/10 px-4 py-2 text-sm font-semibold text-gulf transition hover:bg-gulf/15 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300 dark:hover:bg-cyan-300/20"
+            className="mt-3 inline-flex items-center justify-center rounded-full border border-gulf/20 bg-gulf/10 px-4 py-2 text-sm font-semibold text-gulf transition hover:bg-gulf/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300 dark:hover:bg-cyan-300/20 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
             target="_blank"
             rel="noreferrer"
+            aria-label={`${venue.name} website (opens in a new tab)`}
           >
             Visit website →
+            <span className="sr-only"> (opens in a new tab)</span>
           </a>
         ) : null}
       </div>

@@ -150,7 +150,7 @@ export default function SubmitPage() {
               Your email client should open with the submission details.
             </p>
           ) : null}
-          <p className="text-xs text-muted dark:text-white/40">
+          <p className="text-xs text-muted dark:text-white/60">
             Submissions are reviewed manually. We’ll reach out if we need more info.
           </p>
         </form>

@@ -24,7 +24,7 @@ export default function EventCardCompact({ event }: Props) {
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-gulf dark:bg-gradient-to-r dark:from-purple-400 dark:to-pink-400"></div>
-          <p className="truncate text-xs font-medium text-muted dark:text-white/40">
+          <p className="truncate text-xs font-medium text-muted dark:text-white/60">
             {day} · {time}
           </p>
         </div>
@@ -38,7 +38,7 @@ export default function EventCardCompact({ event }: Props) {
         {event.event.title}
       </h3>
       <div className="mt-auto flex items-center justify-between gap-3">
-        <span className="text-xs text-muted line-clamp-1 dark:text-white/40">{venue}</span>
+        <span className="text-xs text-muted line-clamp-1 dark:text-white/60">{venue}</span>
         <span className="text-xs font-medium text-gulf dark:bg-gradient-to-r dark:from-purple-400 dark:to-pink-400 dark:bg-clip-text dark:text-transparent">
           {event.event.status === "canceled" ? "Canceled" : "Event"}
         </span>

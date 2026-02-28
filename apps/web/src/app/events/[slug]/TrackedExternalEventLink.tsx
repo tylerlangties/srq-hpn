@@ -30,8 +30,9 @@ export default function TrackedExternalEventLink({
     <a
       href={href}
       target="_blank"
-      rel="noreferrer"
+      rel="noreferrer noopener"
       className={className}
+      aria-label={`${eventTitle} (opens in a new tab)`}
       onClick={() => {
         trackEvent("event_link_clicked", {
           event_id: eventId,

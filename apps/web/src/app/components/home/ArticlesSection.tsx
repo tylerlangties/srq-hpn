@@ -119,7 +119,7 @@ export default function ArticlesSection({ showHeader = true, limit }: Props) {
                           {article.category}
                         </span>
                         {article.readTime ? (
-                          <span className="text-xs text-muted dark:text-white/40">
+                          <span className="text-xs text-muted dark:text-white/60">
                             {article.readTime} read
                           </span>
                         ) : null}

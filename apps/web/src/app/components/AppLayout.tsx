@@ -9,6 +9,12 @@ type Props = {
 export default function AppLayout({ children, showAmbient = false }: Props) {
   return (
     <div className="min-h-screen bg-sand dark:bg-[#0a0a0b] text-charcoal dark:text-white">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-charcoal focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+      >
+        Skip to main content
+      </a>
       {showAmbient ? (
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute left-[-180px] top-[-160px] h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,_#ff7a5c_0%,_rgba(255,122,92,0)_70%)] opacity-50 blur-3xl dark:opacity-0" />
@@ -34,7 +40,9 @@ export default function AppLayout({ children, showAmbient = false }: Props) {
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <Header />
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
         <Footer />
       </div>
     </div>

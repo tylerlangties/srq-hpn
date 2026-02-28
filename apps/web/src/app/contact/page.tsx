@@ -103,7 +103,7 @@ export default function ContactPage() {
               Your email client should open with your message pre-filled.
             </p>
           ) : null}
-          <p className="text-xs text-muted dark:text-white/40">
+          <p className="text-xs text-muted dark:text-white/60">
             For quick updates, email us at hello@srqhappenings.com.
           </p>
         </form>

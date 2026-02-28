@@ -29,7 +29,7 @@ export default function ThemeSwitcher({ className }: Props) {
   return (
     <button
       onClick={toggleTheme}
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 ${className ?? ""}`}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b] ${className ?? ""}`}
       aria-label="Toggle theme"
     >
       {theme === "light" ? (

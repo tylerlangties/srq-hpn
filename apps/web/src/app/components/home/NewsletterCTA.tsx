@@ -35,17 +35,22 @@ export default function NewsletterCTA() {
               onSubmit={handleSubmit}
               className="flex flex-col md:flex-row gap-3"
             >
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
             <input
+              id="newsletter-email"
               type="email"
               placeholder="your@email.com"
-              className="flex-1 rounded-full border border-white/70 bg-white/90 px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-coral/30 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/40 dark:focus:ring-purple-500/20"
+              className="flex-1 rounded-full border border-white/70 bg-white/90 px-5 py-3.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-white/40 dark:focus-visible:ring-purple-400/40"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
             />
             <button
               type="submit"
-              className="rounded-full bg-charcoal px-7 py-3.5 text-sm font-semibold text-white shadow-lg hover:bg-charcoal/90 transition whitespace-nowrap dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 dark:shadow-purple-500/25"
+              className="rounded-full bg-charcoal px-7 py-3.5 text-sm font-semibold text-white shadow-lg hover:bg-charcoal/90 transition whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 dark:shadow-purple-500/25 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
             >
               Subscribe
             </button>

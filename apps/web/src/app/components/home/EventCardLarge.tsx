@@ -67,7 +67,7 @@ export default function EventCardLarge({ event, featured, tone = "coral" }: Prop
             <p className="mb-2 line-clamp-2 break-words text-sm text-muted dark:text-white/50">
               {event.event.description ?? "Details coming soon."}
             </p>
-            <div className="mt-auto flex min-w-0 flex-col items-start gap-1 text-xs text-muted md:flex-row md:flex-wrap md:items-center md:gap-2 dark:text-white/40">
+            <div className="mt-auto flex min-w-0 flex-col items-start gap-1 text-xs text-muted md:flex-row md:flex-wrap md:items-center md:gap-2 dark:text-white/60">
               <span className="block max-w-full min-w-0 truncate">📍 {venue}</span>
               <span className="hidden md:inline">·</span>
               <span className="block max-w-full min-w-0 truncate">{area}</span>

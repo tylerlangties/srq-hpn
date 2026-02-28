@@ -15,7 +15,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-sand/80 dark:bg-[#0a0a0b]/80 border-b border-white/50 dark:border-white/10">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-3">
+        <Link
+          href="/"
+          className="flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
+        >
           <div className="relative">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-coral to-gulf text-white shadow-lg shadow-coral/30 font-bold text-sm dark:from-purple-500 dark:to-pink-500 dark:shadow-purple-500/30">
               SRQ
@@ -31,16 +34,28 @@ export default function Header() {
         </Link>
 
         <nav className={`${SHARED_RESPONSIVE.desktopNav} items-center gap-8 text-sm font-medium text-muted dark:text-white/60`}>
-          <Link href="/events" className="transition hover:text-charcoal dark:hover:text-white">
+          <Link
+            href="/events"
+            className="rounded-md transition hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:hover:text-white dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
+          >
             Events
           </Link>
-          <Link href="/articles" className="transition hover:text-charcoal dark:hover:text-white">
+          <Link
+            href="/articles"
+            className="rounded-md transition hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:hover:text-white dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
+          >
             Articles
           </Link>
-          <Link href="/venues" className="transition hover:text-charcoal dark:hover:text-white">
+          <Link
+            href="/venues"
+            className="rounded-md transition hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:hover:text-white dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
+          >
             Venues
           </Link>
-          <Link href="/submit" className="transition hover:text-charcoal dark:hover:text-white">
+          <Link
+            href="/submit"
+            className="rounded-md transition hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:hover:text-white dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
+          >
             Submit
           </Link>
         </nav>
@@ -49,7 +64,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen((value) => !value)}
-            className={`${SHARED_RESPONSIVE.mobileOnly} inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
+            className={`${SHARED_RESPONSIVE.mobileOnly} inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/70 text-charcoal shadow-sm transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]`}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-site-nav"
             aria-label="Toggle navigation menu"
@@ -89,7 +104,7 @@ export default function Header() {
           </button>
           <Link
             href="/login"
-            className={`${SHARED_RESPONSIVE.desktopOnlyBlock} rounded-full border border-charcoal/10 dark:border-white/20 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-medium text-charcoal dark:text-white shadow-sm hover:bg-white dark:hover:bg-white/10 transition`}
+            className={`${SHARED_RESPONSIVE.desktopOnlyBlock} rounded-full border border-charcoal/10 dark:border-white/20 bg-white/70 dark:bg-white/5 px-4 py-2 text-sm font-medium text-charcoal dark:text-white shadow-sm hover:bg-white dark:hover:bg-white/10 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]`}
           >
             Sign in
           </Link>
@@ -103,35 +118,35 @@ export default function Header() {
             <Link
               href="/events"
               onClick={closeMobileMenu}
-              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10"
+              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
             >
               Events
             </Link>
             <Link
               href="/articles"
               onClick={closeMobileMenu}
-              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10"
+              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
             >
               Articles
             </Link>
             <Link
               href="/venues"
               onClick={closeMobileMenu}
-              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10"
+              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
             >
               Venues
             </Link>
             <Link
               href="/submit"
               onClick={closeMobileMenu}
-              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10"
+              className="rounded-xl border border-charcoal/10 bg-white/70 px-4 py-3 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-white/20 dark:bg-white/5 dark:hover:bg-white/10 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
             >
               Submit an event
             </Link>
             <Link
               href="/login"
               onClick={closeMobileMenu}
-              className="rounded-xl border border-charcoal/10 bg-charcoal px-4 py-3 text-white transition hover:bg-charcoal/90 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+              className="rounded-xl border border-charcoal/10 bg-charcoal px-4 py-3 text-white transition hover:bg-charcoal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sand dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 dark:focus-visible:ring-purple-400/40 dark:focus-visible:ring-offset-[#0a0a0b]"
             >
               Sign in
             </Link>
