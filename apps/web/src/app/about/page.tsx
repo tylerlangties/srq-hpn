@@ -5,7 +5,7 @@ export default function AboutPage() {
     {
       title: "Accounts and a weekly digest",
       description:
-        "Create an account, pick your interests, and get a calm weekly email with events you actually want.",
+        "Create an account, pick your interests, and get a digestible weekly email with events you actually want.",
     },
     {
       title: "More event sources, more organizers!",
@@ -43,7 +43,7 @@ export default function AboutPage() {
             </h2>
             <p className="mt-3 text-muted dark:text-white/60 leading-relaxed">
               We make it easy to find what’s happening in Sarasota without
-              overwhelming you. Our goal is to be a calm, curated guide for locals
+              overwhelming you. Our goal is to be a convenient, curated guide for locals
               and visitors alike.
             </p>
           </section>
