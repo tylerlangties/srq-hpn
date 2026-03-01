@@ -4,7 +4,7 @@ import re
 from datetime import UTC, datetime
 from typing import Final
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -106,6 +106,31 @@ def _get_occurrence(
     )
 
 
+def _normalize_title_key(title: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
+
+
+def _get_event_by_semantic_key(
+    db: Session, *, source_id: int, title: str, start_utc: datetime
+) -> Event | None:
+    title_key = _normalize_title_key(title)
+    if not title_key:
+        return None
+
+    title_expr = func.regexp_replace(func.lower(Event.title), r"[^a-z0-9]+", " ", "g")
+    return db.scalar(
+        select(Event)
+        .join(EventOccurrence, EventOccurrence.event_id == Event.id)
+        .where(
+            Event.source_id == source_id,
+            EventOccurrence.start_datetime_utc == start_utc,
+            title_expr == title_key,
+        )
+        .order_by(Event.id.asc())
+        .limit(1)
+    )
+
+
 def upsert_event_and_occurrence(
     db: Session,
     *,
@@ -150,6 +175,13 @@ def upsert_event_and_occurrence(
 
     # ---- Event upsert (airtight with uniqueness constraint) ----
     event = _get_event(db, source_id=source.id, external_id=external_id)
+    if event is None:
+        event = _get_event_by_semantic_key(
+            db,
+            source_id=source.id,
+            title=title,
+            start_utc=start_utc,
+        )
 
     if event is None:
         slug = _build_event_slug(
@@ -181,6 +213,8 @@ def upsert_event_and_occurrence(
     else:
         event.title = title
         event.description = description
+        if event.external_id is None:
+            event.external_id = external_id
         event.external_url = final_url
         event.last_seen_at = now
 
