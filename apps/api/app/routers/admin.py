@@ -42,6 +42,7 @@ class SourceFeedCleanupRequest(BaseModel):
 
 class SourceOut(BaseModel):
     id: int
+    slug: str
     name: str
     type: str
     feed_count: int
@@ -236,17 +237,20 @@ def list_sources(db: Session = Depends(get_db)) -> Sequence[SourceOut]:
     results = db.execute(
         select(
             Source.id,
+            Source.slug,
             Source.name,
             Source.type,
             func.count(SourceFeed.id).label("feed_count"),
         )
         .outerjoin(SourceFeed, Source.id == SourceFeed.source_id)
-        .group_by(Source.id, Source.name, Source.type)
+        .group_by(Source.id, Source.slug, Source.name, Source.type)
         .order_by(Source.name)
     ).all()
 
     return [
-        SourceOut(id=r.id, name=r.name, type=r.type, feed_count=r.feed_count)
+        SourceOut(
+            id=r.id, slug=r.slug, name=r.name, type=r.type, feed_count=r.feed_count
+        )
         for r in results
     ]
 

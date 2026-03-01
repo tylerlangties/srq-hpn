@@ -14,6 +14,7 @@ class Source(Base):
     __tablename__ = "sources"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
     type: Mapped[str] = mapped_column(String(50))  # e.g. "ical", "rss", "html"
     url: Mapped[str] = mapped_column(Text)

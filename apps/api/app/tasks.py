@@ -29,6 +29,7 @@ from typing import Any
 
 import requests
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.celery_app import app
 from app.db import SessionLocal
@@ -47,6 +48,27 @@ WEATHER_REFRESH_JITTER_MAX_SECONDS = int(
 )
 
 
+def _resolve_source(
+    db: Session,
+    *,
+    source_id: int | None = None,
+    source_slug: str | None = None,
+) -> Source:
+    if source_slug:
+        source = db.scalar(select(Source).where(Source.slug == source_slug))
+        if source is None:
+            raise ValueError(f"Source slug '{source_slug}' not found")
+        return source
+
+    if source_id is None:
+        raise ValueError("Provide source_slug or source_id")
+
+    source = db.get(Source, source_id)
+    if source is None:
+        raise ValueError(f"Source {source_id} not found")
+    return source
+
+
 # =============================================================================
 # Direct Collector Tasks
 # These collectors fetch data and ingest it directly into the database
@@ -61,7 +83,8 @@ WEATHER_REFRESH_JITTER_MAX_SECONDS = int(
 )
 def collect_vanwezel(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.5,
     future_only: bool = False,
 ) -> dict[str, Any]:
@@ -85,14 +108,16 @@ def collect_vanwezel(
 
     logger.info(
         "Starting Van Wezel collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(db, source, delay=delay, future_only=future_only)
         stats["task_id"] = self.request.id
@@ -105,7 +130,7 @@ def collect_vanwezel(
         db.rollback()
         logger.error(
             "Van Wezel collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -122,7 +147,8 @@ def collect_vanwezel(
 )
 def collect_mote(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.5,
     months_ahead: int = 2,
     validate_ical: bool = False,
@@ -148,14 +174,16 @@ def collect_mote(
 
     logger.info(
         "Starting Mote Marine collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(
             db,
@@ -175,7 +203,7 @@ def collect_mote(
         db.rollback()
         logger.error(
             "Mote Marine collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -192,7 +220,8 @@ def collect_mote(
 )
 def collect_asolorep(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.5,
     max_pages: int = 10,
     future_only: bool = False,
@@ -204,14 +233,16 @@ def collect_asolorep(
 
     logger.info(
         "Starting Asolo Rep collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(
             db,
@@ -233,7 +264,7 @@ def collect_asolorep(
         db.rollback()
         logger.error(
             "Asolo Rep collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -250,7 +281,8 @@ def collect_asolorep(
 )
 def collect_artfestival(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.5,
     max_pages: int = 10,
     validate_ical: bool = False,
@@ -262,14 +294,16 @@ def collect_artfestival(
 
     logger.info(
         "Starting ArtFestival collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(
             db,
@@ -291,7 +325,7 @@ def collect_artfestival(
         db.rollback()
         logger.error(
             "ArtFestival collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -308,7 +342,8 @@ def collect_artfestival(
 )
 def collect_bigtop(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.25,
     max_pages: int = 10,
     validate_ical: bool = False,
@@ -321,14 +356,16 @@ def collect_bigtop(
 
     logger.info(
         "Starting Big Top collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(
             db,
@@ -351,7 +388,7 @@ def collect_bigtop(
         db.rollback()
         logger.error(
             "Big Top collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -368,7 +405,8 @@ def collect_bigtop(
 )
 def collect_bigwaters(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.5,
     max_pages: int = 10,
     include_past: bool = False,
@@ -381,14 +419,16 @@ def collect_bigwaters(
 
     logger.info(
         "Starting Big Waters collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(
             db,
@@ -411,7 +451,7 @@ def collect_bigwaters(
         db.rollback()
         logger.error(
             "Big Waters collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -428,7 +468,8 @@ def collect_bigwaters(
 )
 def collect_sarasotafair(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.5,
     max_days: int = 90,
     chunk_size: int = 10,
@@ -442,14 +483,16 @@ def collect_sarasotafair(
 
     logger.info(
         "Starting Sarasota Fair collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(
             db,
@@ -473,7 +516,7 @@ def collect_sarasotafair(
         db.rollback()
         logger.error(
             "Sarasota Fair collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -490,7 +533,8 @@ def collect_sarasotafair(
 )
 def collect_selby(
     self,
-    source_id: int,
+    source_id: int | None = None,
+    source_slug: str | None = None,
     delay: float = 0.5,
     max_pages: int = 50,
     filters: str | None = None,
@@ -504,14 +548,16 @@ def collect_selby(
 
     logger.info(
         "Starting Selby collector task",
-        extra={"source_id": source_id, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "task_id": self.request.id,
+        },
     )
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         stats = run_collector(
             db,
@@ -535,7 +581,7 @@ def collect_selby(
         db.rollback()
         logger.error(
             "Selby collector task failed",
-            extra={"source_id": source_id, "error": str(e)},
+            extra={"source_id": source_id, "source_slug": source_slug, "error": str(e)},
             exc_info=True,
         )
         raise
@@ -551,7 +597,12 @@ def collect_selby(
 
 
 @app.task(bind=True, max_retries=3, default_retry_delay=60)
-def ingest_source(self, source_id: int, limit: int = 100) -> dict[str, Any]:
+def ingest_source(
+    self,
+    source_id: int | None = None,
+    source_slug: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
     """
     Ingest events from source feeds for a specific source.
 
@@ -569,21 +620,27 @@ def ingest_source(self, source_id: int, limit: int = 100) -> dict[str, Any]:
     """
     logger.info(
         "Starting source ingestion task",
-        extra={"source_id": source_id, "limit": limit, "task_id": self.request.id},
+        extra={
+            "source_id": source_id,
+            "source_slug": source_slug,
+            "limit": limit,
+            "task_id": self.request.id,
+        },
     )
 
     stats = {
         "task_id": self.request.id,
         "source_id": source_id,
+        "source_slug": source_slug,
         "started_at": datetime.now(UTC).isoformat(),
     }
 
     db = SessionLocal()
 
     try:
-        source = db.get(Source, source_id)
-        if not source:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
+        stats["source_id"] = source.id
+        stats["source_slug"] = source.slug
 
         result = ingest_source_items(db, source=source, limit=limit)
         db.commit()
@@ -738,7 +795,8 @@ def health_check() -> dict[str, Any]:
 @app.task(bind=True)
 def sync_bigtop_local_bridge(
     self,
-    source_id: int = 5,
+    source_id: int | None = 5,
+    source_slug: str | None = None,
     limit: int = 500,
     delay: float = 0.25,
     future_only: bool = True,
@@ -775,6 +833,7 @@ def sync_bigtop_local_bridge(
         extra={
             "task_id": self.request.id,
             "source_id": source_id,
+            "source_slug": source_slug,
             "limit": limit,
             "future_only": future_only,
             "created_months": created_months,
@@ -785,9 +844,7 @@ def sync_bigtop_local_bridge(
 
     db = SessionLocal()
     try:
-        source = db.get(Source, source_id)
-        if source is None:
-            raise ValueError(f"Source {source_id} not found")
+        source = _resolve_source(db, source_id=source_id, source_slug=source_slug)
 
         collector_stats = run_collector(
             db,
@@ -823,7 +880,8 @@ def sync_bigtop_local_bridge(
 
         result: dict[str, Any] = {
             "task_id": self.request.id,
-            "source_id": source_id,
+            "source_id": source.id,
+            "source_slug": source.slug,
             "collector": collector_stats,
             "ingest": ingest_stats,
             "prod_push": {

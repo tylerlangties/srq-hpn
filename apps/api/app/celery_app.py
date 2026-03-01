@@ -18,6 +18,8 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 
+from app.constants.sources import SourceSlugs
+
 # Redis connection URL - defaults to local Redis for development
 # In Docker, this will be redis://redis:6379/0
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -84,7 +86,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_vanwezel",
         "schedule": crontab(minute="0", hour="6"),
         "kwargs": {
-            "source_id": 1,
+            "source_slug": SourceSlugs.VANWEZEL,
             "future_only": True,
             "delay": 5.0,
         },
@@ -95,7 +97,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_mote",
         "schedule": crontab(minute="15", hour="6"),
         "kwargs": {
-            "source_id": 2,
+            "source_slug": SourceSlugs.MOTE,
             "future_only": True,
         },
     },
@@ -103,7 +105,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_asolorep",
         "schedule": crontab(minute="0", hour="5"),
         "kwargs": {
-            "source_id": 3,
+            "source_slug": SourceSlugs.ASOLOREP,
             "future_only": True,
             "delay": 5.0,
         },
@@ -112,7 +114,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_artfestival",
         "schedule": crontab(minute="15", hour="5"),
         "kwargs": {
-            "source_id": 4,
+            "source_slug": SourceSlugs.ARTFESTIVAL,
             "future_only": True,
             "delay": 5.0,
         },
@@ -121,7 +123,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_bigtop",
         "schedule": crontab(minute="30", hour="5"),
         "kwargs": {
-            "source_id": 5,
+            "source_slug": SourceSlugs.BIGTOP,
             "future_only": True,
             "delay": 5.0,
         },
@@ -130,7 +132,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_bigwaters",
         "schedule": crontab(minute="45", hour="5"),
         "kwargs": {
-            "source_id": 6,
+            "source_slug": SourceSlugs.BIGWATERS,
             "future_only": True,
             "delay": 5.0,
         },
@@ -139,7 +141,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_sarasotafair",
         "schedule": crontab(minute="0", hour="6"),
         "kwargs": {
-            "source_id": 7,
+            "source_slug": SourceSlugs.SARASOTAFAIR,
             "future_only": True,
             "delay": 5.0,
         },
@@ -148,7 +150,7 @@ app.conf.beat_schedule = {
         "task": "app.tasks.collect_selby",
         "schedule": crontab(minute="10", hour="6"),
         "kwargs": {
-            "source_id": 8,
+            "source_slug": SourceSlugs.SELBY,
             "future_only": True,
             "delay": 5.0,
         },

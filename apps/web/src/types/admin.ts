@@ -67,6 +67,7 @@ export type UpdateVenueRequest = {
 
 export type SourceOut = {
   id: number;
+  slug: string;
   name: string;
   type: string;
   feed_count: number;
