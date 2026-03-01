@@ -123,6 +123,7 @@ def collect_vanwezel(
 def collect_mote(
     self,
     source_id: int,
+    delay: float = 0.5,
     months_ahead: int = 2,
     validate_ical: bool = False,
     future_only: bool = False,
@@ -159,6 +160,7 @@ def collect_mote(
         stats = run_collector(
             db,
             source,
+            delay=delay,
             months_ahead=months_ahead,
             validate_ical=validate_ical,
             future_only=future_only,

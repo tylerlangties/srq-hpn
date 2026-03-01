@@ -64,14 +64,12 @@ def _build_year_month(value: date) -> str:
     return f"{value.year:04d}-{value.month:02d}"
 
 
-def _build_page_url(*, year_month: str, is_current: bool) -> str:
-    if is_current:
-        return f"{BASE_URL}{EVENTS_MONTH_PATH}"
+def _build_page_url(*, year_month: str) -> str:
     return f"{BASE_URL}{EVENTS_MONTH_PATH}{year_month}/"
 
 
-def _build_ical_url(*, year_month: str, is_current: bool) -> str:
-    page_url = _build_page_url(year_month=year_month, is_current=is_current)
+def _build_ical_url(*, year_month: str) -> str:
+    page_url = _build_page_url(year_month=year_month)
     return f"{page_url}?ical=1"
 
 
@@ -86,8 +84,8 @@ def generate_month_entries(*, months_ahead: int = 2) -> list[MonthEntry]:
         entries.append(
             MonthEntry(
                 year_month=year_month,
-                ical_url=_build_ical_url(year_month=year_month, is_current=is_current),
-                page_url=_build_page_url(year_month=year_month, is_current=is_current),
+                ical_url=_build_ical_url(year_month=year_month),
+                page_url=_build_page_url(year_month=year_month),
                 is_current=is_current,
             )
         )
