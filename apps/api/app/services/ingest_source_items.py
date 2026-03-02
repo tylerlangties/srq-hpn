@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # Default delay between iCal fetches (seconds).  Keeps request rate low
 # enough to avoid triggering Cloudflare rate-limit challenges.
 DEFAULT_FETCH_DELAY: float = 0.5
+CF_BLOCK_COOLDOWN: timedelta = timedelta(hours=3)
 
 
 def ingest_source_items(
@@ -89,9 +90,27 @@ def ingest_source_items(
     ingested = 0
     errors = 0
     cf_challenges = 0
+    cf_skipped_recent = 0
     seen_signatures: set[tuple[str, datetime]] = set()
 
     for item in items:
+        if (
+            item.status == "cf_blocked"
+            and item.last_fetched_at is not None
+            and (now - item.last_fetched_at) < CF_BLOCK_COOLDOWN
+        ):
+            cf_skipped_recent += 1
+            logger.info(
+                "Skipping recently Cloudflare-blocked feed",
+                extra={
+                    "source_id": source.id,
+                    "feed_id": item.id,
+                    "ical_url": item.ical_url,
+                    "last_fetched_at": item.last_fetched_at.isoformat(),
+                },
+            )
+            continue
+
         seen += 1
         try:
             logger.debug(
@@ -281,6 +300,7 @@ def ingest_source_items(
             "events_ingested": ingested,
             "errors": errors,
             "cf_challenges": cf_challenges,
+            "cf_skipped_recent": cf_skipped_recent,
         },
     )
 
@@ -292,4 +312,5 @@ def ingest_source_items(
         "events_ingested": ingested,
         "errors": errors,
         "cf_challenges": cf_challenges,
+        "cf_skipped_recent": cf_skipped_recent,
     }

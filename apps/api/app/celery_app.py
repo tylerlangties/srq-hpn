@@ -23,6 +23,12 @@ from app.constants.sources import SourceSlugs
 # Redis connection URL - defaults to local Redis for development
 # In Docker, this will be redis://redis:6379/0
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+ENV_NAME = os.getenv("ENV", "development").strip().lower()
+ENABLE_BIGTOP_BRIDGE = (
+    ENV_NAME != "production"
+    and bool(os.getenv("BIGTOP_INGEST_API_BASE"))
+    and bool(os.getenv("BIGTOP_INGEST_TOKEN"))
+)
 
 # Create the Celery application instance
 # The first argument is the name of the current module (used for auto-generating task names)
@@ -164,6 +170,7 @@ app.conf.beat_schedule = {
     "ingest-all-sources-daily": {
         "task": "app.tasks.ingest_all_sources",
         "schedule": crontab(minute="30", hour="6"),
+        "kwargs": {},
     },
     # ---------------------------------------------------------------------
     # Weather Cache Tasks
@@ -185,6 +192,27 @@ app.conf.beat_schedule = {
         "schedule": crontab(minute="40", hour="2"),
     },
 }
+
+if ENV_NAME == "production":
+    app.conf.beat_schedule.pop("collect-bigtop-daily", None)
+    app.conf.beat_schedule["ingest-all-sources-daily"]["kwargs"] = {
+        "exclude_source_slugs": [SourceSlugs.BIGTOP]
+    }
+elif ENABLE_BIGTOP_BRIDGE:
+    app.conf.beat_schedule.pop("collect-bigtop-daily", None)
+    app.conf.beat_schedule["sync-bigtop-local-bridge"] = {
+        "task": "app.tasks.sync_bigtop_local_bridge",
+        "schedule": crontab(minute="30", hour="5"),
+        "kwargs": {
+            "source_slug": SourceSlugs.BIGTOP,
+            "future_only": True,
+            "delay": 1.0,
+            "push_prod": True,
+        },
+    }
+    app.conf.beat_schedule["ingest-all-sources-daily"]["kwargs"] = {
+        "exclude_source_slugs": [SourceSlugs.BIGTOP]
+    }
 
 
 # This allows running: celery -A app.celery_app worker

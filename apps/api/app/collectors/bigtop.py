@@ -53,6 +53,16 @@ GRAPHQL_HEADERS = {
     "Referer": EVENTS_PAGE,
 }
 
+BROWSER_HEADERS = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    ),
+}
+
 EVENTS_QUERY = """
 query CalendarEventsQuery($restaurantId: Int!) {
   calendarEvents(restaurantId: $restaurantId) {
@@ -96,6 +106,12 @@ def establish_session(session: requests.Session) -> None:
         "Establishing session by visiting events page", extra={"url": EVENTS_PAGE}
     )
     resp = session.get(EVENTS_PAGE, timeout=30)
+    if resp.status_code in {403, 429}:
+        logger.warning(
+            "Session bootstrap blocked; continuing without bootstrap cookies",
+            extra={"url": EVENTS_PAGE, "status_code": resp.status_code},
+        )
+        return
     resp.raise_for_status()
     logger.debug(
         "Session established",
@@ -222,9 +238,7 @@ def run_collector(
     }
 
     session = get_http_session(
-        headers={
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        },
+        headers=BROWSER_HEADERS,
         allowed_methods=["HEAD", "GET", "POST"],
     )
 

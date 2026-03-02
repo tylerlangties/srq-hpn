@@ -264,6 +264,38 @@ Local-only debugging:
 
 ---
 
+## Adding a Source
+
+When adding a new event source, use a stable slug (not numeric IDs) so Celery scheduling works the same across local and production.
+
+1. Add the source row in the database with a unique `slug` in `sources`.
+2. Add a slug constant in `apps/api/app/constants/sources.py`.
+3. Wire the source into task scheduling in `apps/api/app/celery_app.py` using `source_slug` in task kwargs.
+4. Ensure the corresponding task in `apps/api/app/tasks.py` resolves via `_resolve_source(...)` (slug-first, `source_id` fallback).
+5. If the source has a new collector module, implement it under `apps/api/app/collectors/` and register any required task wrapper in `apps/api/app/tasks.py`.
+6. Run migrations and restart workers/beat:
+
+```bash
+docker compose --env-file .env.production -f compose.yml exec api alembic upgrade head
+docker compose --env-file .env.production -f compose.yml restart celery-worker celery-beat
+```
+
+Quick verification query:
+
+```sql
+SELECT id, slug, name, type FROM sources ORDER BY id;
+```
+
+Manual task call example (slug-based):
+
+```bash
+docker compose --env-file .env.production -f compose.yml exec celery-worker \
+  celery -A app.celery_app call app.tasks.collect_asolorep \
+  --kwargs='{"source_slug":"asolorep","delay":3.0}'
+```
+
+---
+
 ## 📚 Documentation
 
 - [Database & Infrastructure](docs/database-guide.md)

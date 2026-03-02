@@ -32,6 +32,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.celery_app import app
+from app.constants.sources import SourceSlugs
 from app.db import SessionLocal
 from app.models.source import Source
 from app.services.ingest_sink import DbSink, MultiSink, ProdApiSink
@@ -672,7 +673,11 @@ def ingest_source(
 
 
 @app.task(bind=True)
-def ingest_all_sources(self, limit_per_source: int = 100) -> dict[str, Any]:
+def ingest_all_sources(
+    self,
+    limit_per_source: int = 100,
+    exclude_source_slugs: list[str] | None = None,
+) -> dict[str, Any]:
     """
     Ingest events from all sources that have source feeds.
 
@@ -687,8 +692,14 @@ def ingest_all_sources(self, limit_per_source: int = 100) -> dict[str, Any]:
     """
     logger.info(
         "Starting all-sources ingestion task",
-        extra={"limit_per_source": limit_per_source, "task_id": self.request.id},
+        extra={
+            "limit_per_source": limit_per_source,
+            "exclude_source_slugs": exclude_source_slugs or [],
+            "task_id": self.request.id,
+        },
     )
+
+    excluded_slugs = set(exclude_source_slugs or [])
 
     stats = {
         "task_id": self.request.id,
@@ -697,6 +708,7 @@ def ingest_all_sources(self, limit_per_source: int = 100) -> dict[str, Any]:
         "total_feeds_seen": 0,
         "total_events_ingested": 0,
         "total_errors": 0,
+        "excluded_source_slugs": sorted(excluded_slugs),
         "source_results": [],
     }
 
@@ -705,6 +717,10 @@ def ingest_all_sources(self, limit_per_source: int = 100) -> dict[str, Any]:
     try:
         # Get all active sources
         sources = db.scalars(select(Source)).all()
+        if excluded_slugs:
+            sources = [
+                source for source in sources if source.slug not in excluded_slugs
+            ]
 
         for source in sources:
             try:
@@ -795,8 +811,8 @@ def health_check() -> dict[str, Any]:
 @app.task(bind=True)
 def sync_bigtop_local_bridge(
     self,
-    source_id: int | None = 5,
-    source_slug: str | None = None,
+    source_id: int | None = None,
+    source_slug: str | None = SourceSlugs.BIGTOP,
     limit: int = 500,
     delay: float = 0.25,
     future_only: bool = True,
