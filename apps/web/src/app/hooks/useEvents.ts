@@ -3,12 +3,23 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api";
 import { API_PATHS, withQuery } from "@/lib/api-paths";
-import type { CategoryOut, EventOccurrenceOut } from "@/types/events";
+import type { CategoryOut, EventOccurrenceOut, EventRangeOut, EventRangeSort } from "@/types/events";
 
 type EventsState = {
   data: EventOccurrenceOut[] | null;
   error: string | null;
   loading: boolean;
+};
+
+type RangeEventsState = {
+  data: EventOccurrenceOut[] | null;
+  error: string | null;
+  loading: boolean;
+  total: number | null;
+  page: number | null;
+  pageSize: number | null;
+  totalPages: number | null;
+  sort: EventRangeSort | null;
 };
 
 type EventCountState = {
@@ -27,6 +38,9 @@ type EventDiscoveryFilters = {
   category?: string | null;
   freeOnly?: boolean | null;
   venue?: string | null;
+  sort?: EventRangeSort;
+  page?: number;
+  pageSize?: number;
 };
 
 function getFriendlyEventErrorMessage(err: unknown): string {
@@ -88,11 +102,16 @@ export function useEventsForRange(
   start: string,
   end: string,
   filters?: EventDiscoveryFilters
-): EventsState {
-  const [state, setState] = useState<EventsState>({
+): RangeEventsState {
+  const [state, setState] = useState<RangeEventsState>({
     data: null,
     error: null,
     loading: true,
+    total: null,
+    page: null,
+    pageSize: null,
+    totalPages: null,
+    sort: null,
   });
 
   useEffect(() => {
@@ -100,23 +119,42 @@ export function useEventsForRange(
 
     async function load() {
       try {
-        setState({ data: null, error: null, loading: true });
-        const res = await apiGet<EventOccurrenceOut[]>(
+        setState((previous) => ({ ...previous, data: null, error: null, loading: true }));
+        const res = await apiGet<EventRangeOut>(
           withQuery(API_PATHS.events.range, {
             start,
             end,
             category: filters?.category,
             free: filters?.freeOnly,
             venue: filters?.venue,
+            sort: filters?.sort,
+            page: filters?.page,
+            page_size: filters?.pageSize,
           })
         );
-        if (!cancelled) setState({ data: res, error: null, loading: false });
+        if (!cancelled) {
+          setState({
+            data: res.items,
+            error: null,
+            loading: false,
+            total: res.total,
+            page: res.page,
+            pageSize: res.page_size,
+            totalPages: res.total_pages,
+            sort: res.sort,
+          });
+        }
       } catch (err) {
         if (!cancelled) {
           setState({
             data: null,
             error: getFriendlyEventErrorMessage(err),
             loading: false,
+            total: null,
+            page: null,
+            pageSize: null,
+            totalPages: null,
+            sort: null,
           });
         }
       }
@@ -127,7 +165,7 @@ export function useEventsForRange(
     return () => {
       cancelled = true;
     };
-  }, [end, filters?.category, filters?.freeOnly, filters?.venue, start]);
+  }, [end, filters?.category, filters?.freeOnly, filters?.page, filters?.pageSize, filters?.sort, filters?.venue, start]);
 
   return state;
 }

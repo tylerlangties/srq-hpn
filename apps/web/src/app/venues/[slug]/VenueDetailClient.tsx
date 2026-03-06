@@ -37,7 +37,17 @@ export default function VenueDetailClient({ venue, events }: Props) {
         Jump to events ↓
       </a>
       <div className="mb-10 rounded-3xl bg-white/80 border border-white/60 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="relative mb-6 h-56 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900/40">
+        <h1 className="text-3xl font-[var(--font-heading)] font-semibold md:text-4xl">{venue.name}</h1>
+        <p className="mt-2 text-muted dark:text-white/60">
+          {venue.area ?? "Sarasota"} · {venue.timezone ?? "America/New_York"}
+        </p>
+        <a
+          href="#venue-upcoming-events"
+          className="mt-4 inline-flex items-center justify-center rounded-full border border-charcoal/15 bg-white px-4 py-2 text-sm font-semibold text-charcoal transition hover:bg-sand dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+        >
+          Jump to events ↓
+        </a>
+        <div className="relative mt-6 h-[36rem] overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900/40">
           {heroImagePath ? (
             <Image
               src={heroImagePath}
@@ -51,16 +61,6 @@ export default function VenueDetailClient({ venue, events }: Props) {
             <div className="h-full w-full bg-gradient-to-r from-cyan-200/40 via-sky-100/50 to-amber-100/40 dark:from-cyan-900/30 dark:via-slate-900/40 dark:to-amber-900/20" />
           )}
         </div>
-        <h1 className="text-3xl font-[var(--font-heading)] font-semibold md:text-4xl">{venue.name}</h1>
-        <p className="mt-2 text-muted dark:text-white/60">
-          {venue.area ?? "Sarasota"} · {venue.timezone ?? "America/New_York"}
-        </p>
-        <a
-          href="#venue-upcoming-events"
-          className="mt-4 inline-flex items-center justify-center rounded-full border border-charcoal/15 bg-white px-4 py-2 text-sm font-semibold text-charcoal transition hover:bg-sand dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-        >
-          Jump to events ↓
-        </a>
         {venue.description ? (
           <p className="mt-4 max-w-3xl text-sm leading-6 text-muted dark:text-white/70">{venue.description}</p>
         ) : null}

@@ -313,7 +313,7 @@ export default function AdminVenuesPage() {
                 ) : null}
                 {heroImageValidation.normalizedPath && heroImageValidation.isValid ? (
                   <div className="mt-3 overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                    <div className="relative h-44 w-full">
+                    <div className="relative h-[36rem] w-full">
                       <Image
                         src={heroImageValidation.normalizedPath}
                         alt={`${venue.name || "Venue"} hero preview`}

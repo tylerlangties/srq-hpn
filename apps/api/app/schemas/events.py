@@ -80,3 +80,12 @@ class EventSlugResolutionOut(BaseModel):
     event_id: int
     canonical_segment: str
     is_unique: bool
+
+
+class EventRangeOut(BaseModel):
+    items: list[EventOccurrenceOut] = Field(default_factory=list)
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    sort: str

@@ -45,6 +45,17 @@ export type EventOccurrenceOut = {
   location_text?: string | null;
 };
 
+export type EventRangeSort = "date_asc" | "date_desc" | "title_asc" | "title_desc";
+
+export type EventRangeOut = {
+  items: EventOccurrenceOut[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  sort: EventRangeSort;
+};
+
 export type EventDetailOut = {
   event: EventOut;
   next_occurrence: EventOccurrenceOut;

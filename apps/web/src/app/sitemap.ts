@@ -3,7 +3,21 @@ import { getArticleSlugs } from "@/lib/articles";
 import { API_PATHS, withQuery } from "@/lib/api-paths";
 import { toEventRouteSegment } from "@/lib/event-display";
 import { buildSiteUrl, getSiteOrigin } from "@/lib/seo";
-import type { EventOccurrenceOut, VenueOut } from "@/types/events";
+import type { EventOccurrenceOut, EventRangeOut, VenueOut } from "@/types/events";
+
+function toRangePayload(payload: EventRangeOut | EventOccurrenceOut[]): EventRangeOut {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page: 1,
+      page_size: payload.length || 1,
+      total_pages: 1,
+      sort: "date_asc",
+    };
+  }
+  return payload;
+}
 
 function toYmd(date: Date) {
   const year = date.getUTCFullYear();
@@ -46,14 +60,34 @@ async function getEventEntries(): Promise<MetadataRoute.Sitemap> {
   endDate.setUTCDate(endDate.getUTCDate() + 365);
   const end = toYmd(endDate);
 
-  const path = withQuery(API_PATHS.events.range, { start, end });
-  const occurrences = await getJson<EventOccurrenceOut[]>(path);
-  if (!occurrences || occurrences.length === 0) {
+  const allOccurrences: EventOccurrenceOut[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const path = withQuery(API_PATHS.events.range, {
+      start,
+      end,
+      sort: "date_asc",
+      page,
+      page_size: 100,
+    });
+    const payload = await getJson<EventRangeOut | EventOccurrenceOut[]>(path);
+    const range = payload ? toRangePayload(payload) : null;
+    if (!range) {
+      return [];
+    }
+    allOccurrences.push(...range.items);
+    totalPages = range.total_pages;
+    page += 1;
+  }
+
+  if (allOccurrences.length === 0) {
     return [];
   }
 
   const byEvent = new Map<number, EventOccurrenceOut>();
-  for (const occurrence of occurrences) {
+  for (const occurrence of allOccurrences) {
     if (!byEvent.has(occurrence.event.id)) {
       byEvent.set(occurrence.event.id, occurrence);
     }

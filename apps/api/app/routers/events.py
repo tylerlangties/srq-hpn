@@ -16,6 +16,7 @@ from app.schemas.events import (
     EventCountOut,
     EventDetailOut,
     EventOccurrenceOut,
+    EventRangeOut,
     EventSlugResolutionOut,
 )
 
@@ -141,7 +142,7 @@ def events_for_day(
     return [to_occurrence_payload(occ) for occ in occurrences]
 
 
-@router.get("/range", response_model=list[EventOccurrenceOut])
+@router.get("/range", response_model=EventRangeOut)
 def events_for_range(
     start: date = Query(
         ..., description="Start local date YYYY-MM-DD (America/New_York)"
@@ -162,8 +163,23 @@ def events_for_range(
         default=None,
         description="Optional venue slug filter",
     ),
+    sort: str = Query(
+        default="date_asc",
+        description="Sort mode: date_asc, date_desc, title_asc, title_desc",
+    ),
+    page: int = Query(
+        default=1,
+        ge=1,
+        description="1-based page number",
+    ),
+    page_size: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+        description="Page size (1-100)",
+    ),
     db: Session = Depends(get_db),
-) -> list[dict[str, object]]:
+) -> dict[str, object]:
     """
     Return all occurrences whose start_datetime_utc falls within the local date range
     [start 00:00, (end + 1 day) 00:00) converted to UTC.
@@ -177,8 +193,7 @@ def events_for_range(
             "Invalid date range",
             extra={"start": str(start), "end": str(end)},
         )
-        # FastAPI will serialize this nicely for clients
-        raise ValueError("end must be >= start")
+        raise HTTPException(status_code=422, detail="end must be >= start")
 
     local_start = datetime.combine(start, time.min, tzinfo=SRQ_TZ)
     # inclusive end -> exclusive bound at next day midnight
@@ -195,17 +210,44 @@ def events_for_range(
         .where(EventOccurrence.start_datetime_utc >= start_utc)
         .where(EventOccurrence.start_datetime_utc < end_utc)
         .where(Event.hidden.is_(False))
-        .options(
-            selectinload(EventOccurrence.event).selectinload(Event.categories),
-            selectinload(EventOccurrence.venue),
-        )
-        .order_by(EventOccurrence.start_datetime_utc.asc())
     )
     stmt = apply_discovery_filters(
         stmt,
         category_slug=category,
         free_only=free_only,
         venue_slug=venue,
+    )
+
+    normalized_sort = sort.strip().lower()
+    orderings = {
+        "date_asc": (EventOccurrence.start_datetime_utc.asc(), Event.id.asc()),
+        "date_desc": (EventOccurrence.start_datetime_utc.desc(), Event.id.asc()),
+        "title_asc": (
+            func.lower(Event.title).asc(),
+            EventOccurrence.start_datetime_utc.asc(),
+        ),
+        "title_desc": (
+            func.lower(Event.title).desc(),
+            EventOccurrence.start_datetime_utc.asc(),
+        ),
+    }
+    if normalized_sort not in orderings:
+        raise HTTPException(status_code=422, detail="Invalid sort value")
+
+    count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
+    total = int(db.scalar(count_stmt) or 0)
+
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+    offset = (page - 1) * page_size
+
+    stmt = (
+        stmt.options(
+            selectinload(EventOccurrence.event).selectinload(Event.categories),
+            selectinload(EventOccurrence.venue),
+        )
+        .order_by(*orderings[normalized_sort])
+        .offset(offset)
+        .limit(page_size)
     )
 
     occurrences = db.scalars(stmt).all()
@@ -218,11 +260,22 @@ def events_for_range(
             "category": category,
             "free": free_only,
             "venue": venue,
+            "sort": normalized_sort,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
             "count": len(occurrences),
         },
     )
 
-    return [to_occurrence_payload(occ) for occ in occurrences]
+    return {
+        "items": [to_occurrence_payload(occ) for occ in occurrences],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "sort": normalized_sort,
+    }
 
 
 @router.get("/surprise", response_model=EventOccurrenceOut)
