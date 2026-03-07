@@ -24,7 +24,7 @@ You get wide Sarasota Bay views, room to wander, and enough activity nearby to k
 
 Tip: Arrive before sunset so you can park once and transition straight into your next stop.
 
-## 2. Grab a Rooftop Drink in Downtown
+## 2. Grab a Rooftop Drink Downtown
 
 Perspective Rooftop at Art Ovation and Sage's rooftop bar both offer skyline views with a date-night vibe.
 Rooftops work well as either your opener or your final stop when you want a little energy.
