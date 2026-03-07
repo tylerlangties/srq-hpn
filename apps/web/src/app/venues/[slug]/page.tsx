@@ -187,7 +187,7 @@ export default async function VenueDetailPage({ params }: Props) {
   };
 
   return (
-    <AppLayout>
+    <AppLayout showAmbient>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(venueJsonLd) }}

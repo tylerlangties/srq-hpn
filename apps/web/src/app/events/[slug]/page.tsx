@@ -166,10 +166,13 @@ export default async function EventDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
       />
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
-        <section className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-xl shadow-charcoal/5 backdrop-blur-sm dark:border-white/10 dark:bg-white/5 md:p-8">
+      <div className={`mx-auto w-full max-w-6xl py-12 ${SHARED_RESPONSIVE.containerInset}`}>
+        <section className="mb-10 rounded-3xl bg-white/80 border border-white/60 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <div className="relative mb-6 h-[20rem] overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-900/40">
+            <div className="h-full w-full bg-gradient-to-r from-cyan-200/40 via-sky-100/50 to-amber-100/40 dark:from-cyan-900/30 dark:via-slate-900/40 dark:to-amber-900/20" />
+          </div>
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide text-muted dark:text-white/50">
-            <span className="rounded-full border border-charcoal/10 bg-sand px-3 py-1 dark:border-white/20 dark:bg-white/10 dark:text-white/80">
+            <span className="rounded-full border border-charcoal/15 bg-white px-3 py-1 dark:border-white/20 dark:bg-white/5 dark:text-white/80">
               Event Details
             </span>
             {detail.event.categories.map((category) => (
@@ -184,7 +187,7 @@ export default async function EventDetailPage({ params }: PageProps) {
 
           <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
             <div>
-              <h1 className="text-3xl font-[var(--font-heading)] font-semibold leading-tight text-charcoal dark:text-white md:text-5xl">
+              <h1 className="text-3xl font-[var(--font-heading)] font-semibold leading-tight text-charcoal dark:text-white md:text-4xl">
                 {displayTitle}
               </h1>
               <p className="mt-4 text-base leading-relaxed text-muted dark:text-white/65 md:text-lg">
@@ -209,7 +212,7 @@ export default async function EventDetailPage({ params }: PageProps) {
                 {venue?.slug ? (
                   <Link
                     href={`/venues/${venue.slug}`}
-                    className={`inline-flex ${SHARED_RESPONSIVE.buttonWidth} items-center justify-center rounded-full border border-charcoal/10 bg-white/70 ${SHARED_RESPONSIVE.buttonPadding} text-sm font-semibold text-charcoal transition hover:bg-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
+                    className={`inline-flex ${SHARED_RESPONSIVE.buttonWidth} items-center justify-center rounded-full border border-charcoal/15 bg-white ${SHARED_RESPONSIVE.buttonPadding} text-sm font-semibold text-charcoal transition hover:bg-sand dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
                   >
                     More at {venue.name}
                   </Link>
@@ -217,7 +220,7 @@ export default async function EventDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            <aside className="rounded-2xl border border-charcoal/10 bg-sand/70 p-4 dark:border-white/15 dark:bg-white/5">
+            <aside className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-900/40">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted dark:text-white/50">
                 {presentation.hasUpcomingSeries ? "Next date" : "Schedule"}
               </p>
@@ -248,7 +251,7 @@ export default async function EventDetailPage({ params }: PageProps) {
           </div>
         </section>
 
-        <section className="mt-10 rounded-3xl border border-white/60 bg-white/80 p-6 backdrop-blur-sm dark:border-white/10 dark:bg-white/5 md:p-8">
+        <section className="mb-10 rounded-3xl bg-white/80 border border-white/60 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
           <h2 className="text-2xl font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">
             {presentation.hasUpcomingSeries ? "Upcoming dates" : "Event schedule"}
           </h2>
@@ -258,7 +261,7 @@ export default async function EventDetailPage({ params }: PageProps) {
             {detail.upcomingOccurrences.map((occurrence) => (
               <article
                 key={occurrence.id}
-                className="flex flex-col gap-2 rounded-2xl border border-charcoal/10 bg-sand/60 p-4 dark:border-white/15 dark:bg-white/5 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-2 rounded-2xl bg-slate-100 p-4 dark:bg-slate-900/40 md:flex-row md:items-center md:justify-between"
               >
                 <div>
                   <p className="text-sm font-semibold text-charcoal dark:text-white">
@@ -277,27 +280,39 @@ export default async function EventDetailPage({ params }: PageProps) {
         </section>
 
         {presentation.hasRelatedVenueEvents ? (
-          <section className="mt-10">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">
-                More at this venue
-              </h2>
+          <div id="more-at-venue" className="mb-6 scroll-mt-24">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">
+                  More at this venue
+                </h2>
+                <p className="mt-2 text-muted dark:text-white/60">Other upcoming events at this location.</p>
+              </div>
               {venue?.slug ? (
                 <Link
                   href={`/venues/${venue.slug}`}
-                  className="text-sm font-medium text-gulf transition hover:text-gulf/80 dark:text-cyan-300 dark:hover:text-cyan-200"
+                  className="text-sm font-medium text-gulf underline-offset-2 hover:underline dark:text-cyan-300"
                 >
                   View venue page
                 </Link>
               ) : null}
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
               {detail.moreFromVenue.map((occurrence) => (
                 <EventCardCompact key={occurrence.id} event={occurrence} />
               ))}
             </div>
-          </section>
+          </div>
         ) : null}
+
+        <div className="mt-8">
+          <Link
+            href="/events"
+            className="inline-flex text-sm font-medium text-gulf underline-offset-2 hover:underline dark:text-cyan-300"
+          >
+            Back to events
+          </Link>
+        </div>
       </div>
     </AppLayout>
   );
