@@ -72,7 +72,7 @@ export default function AdminTaskRunsPage() {
   if (authChecking || !user) {
     return (
       <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Loading...</div>
+        <div className="text-sm font-medium text-muted dark:text-white/50">Loading...</div>
       </div>
     );
   }
@@ -81,18 +81,18 @@ export default function AdminTaskRunsPage() {
     <div className="container mx-auto max-w-6xl px-4 py-8 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Task Runs</h1>
-          <p className="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <h1 className="text-3xl font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">Task Runs</h1>
+          <p className="mt-1 text-sm font-medium text-muted dark:text-white/60">
             Visibility for scheduled Celery tasks and overnight runs.
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Window</label>
+            <label className="block text-xs font-semibold text-charcoal dark:text-white/80">Window</label>
             <select
               value={days}
               onChange={(event) => setDays(parseInt(event.target.value, 10))}
-              className="rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+              className="rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 px-3 py-2 text-sm text-charcoal dark:text-white"
             >
               <option value={3}>3 days</option>
               <option value={7}>7 days</option>
@@ -101,11 +101,11 @@ export default function AdminTaskRunsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Rows</label>
+            <label className="block text-xs font-semibold text-charcoal dark:text-white/80">Rows</label>
             <select
               value={limit}
               onChange={(event) => setLimit(parseInt(event.target.value, 10))}
-              className="rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+              className="rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 px-3 py-2 text-sm text-charcoal dark:text-white"
             >
               <option value={30}>30</option>
               <option value={60}>60</option>
@@ -115,7 +115,7 @@ export default function AdminTaskRunsPage() {
           </div>
           <button
             onClick={() => void loadData(days, limit)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+            className="rounded-xl bg-gulf px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gulf/90"
           >
             Refresh
           </button>
@@ -123,14 +123,14 @@ export default function AdminTaskRunsPage() {
       </div>
 
       {loading && (
-        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 text-sm font-medium text-muted dark:text-white/60">
           Loading task telemetry...
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4">
-          <p className="text-sm font-semibold text-red-900 dark:text-red-300">Failed to load task data</p>
+        <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
+          <p className="text-sm font-semibold text-red-700 dark:text-red-300">Failed to load task data</p>
           <p className="mt-1 text-sm text-red-800 dark:text-red-400">{error}</p>
         </div>
       )}
@@ -138,35 +138,35 @@ export default function AdminTaskRunsPage() {
       {data && !loading && !error && (
         <>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Total Runs</p>
-              <p className="mt-1 text-3xl font-bold text-slate-900 dark:text-slate-100">{data.total_runs}</p>
+            <div className="rounded-xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted dark:text-white/50">Total Runs</p>
+              <p className="mt-1 text-3xl font-bold text-charcoal dark:text-white">{data.total_runs}</p>
             </div>
-            <div className="rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Success</p>
-              <p className="mt-1 text-3xl font-bold text-emerald-800 dark:text-emerald-200">{data.success_count}</p>
+            <div className="rounded-xl border border-palm/30 dark:border-palm/40 bg-palm/10 dark:bg-palm/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-palm dark:text-palm/90">Success</p>
+              <p className="mt-1 text-3xl font-bold text-palm dark:text-palm/90">{data.success_count}</p>
             </div>
-            <div className="rounded-xl border-2 border-rose-300 dark:border-rose-700 bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950 dark:to-rose-900/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">Failures</p>
-              <p className="mt-1 text-3xl font-bold text-rose-800 dark:text-rose-200">{data.failure_count}</p>
+            <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">Failures</p>
+              <p className="mt-1 text-3xl font-bold text-red-700 dark:text-red-300">{data.failure_count}</p>
             </div>
-            <div className="rounded-xl border-2 border-blue-300 dark:border-blue-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Success Rate</p>
-              <p className="mt-1 text-3xl font-bold text-blue-800 dark:text-blue-200">
+            <div className="rounded-xl border border-gulf/30 dark:border-gulf/40 bg-gulf/10 dark:bg-gulf/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gulf dark:text-gulf/90">Success Rate</p>
+              <p className="mt-1 text-3xl font-bold text-gulf dark:text-gulf/90">
                 {(data.success_rate * 100).toFixed(1)}%
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Status Mix</h2>
-              <p className="mt-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+            <div className="rounded-xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-5 shadow-sm">
+              <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">Daily Status Mix</h2>
+              <p className="mt-1 text-xs font-medium text-muted dark:text-white/50">
                 Success, failure, and non-terminal states by day.
               </p>
               <div className="mt-5 space-y-3">
                 {data.day_series.length === 0 ? (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">No runs in selected window.</p>
+                  <p className="text-sm text-muted dark:text-white/50">No runs in selected window.</p>
                 ) : (
                   data.day_series.map((point) => {
                     const successPct = maxDayTotal > 0 ? (point.success / maxDayTotal) * 100 : 0;
@@ -174,14 +174,14 @@ export default function AdminTaskRunsPage() {
                     const otherPct = maxDayTotal > 0 ? (point.other / maxDayTotal) * 100 : 0;
                     return (
                       <div key={point.day}>
-                        <div className="mb-1 flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                        <div className="mb-1 flex items-center justify-between text-xs text-muted dark:text-white/50">
                           <span>{point.day}</span>
                           <span>{point.total} run(s)</span>
                         </div>
-                        <div className="flex h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                          <div className="bg-emerald-500" style={{ width: `${successPct}%` }} />
-                          <div className="bg-rose-500" style={{ width: `${failurePct}%` }} />
-                          <div className="bg-slate-400" style={{ width: `${otherPct}%` }} />
+                        <div className="flex h-3 overflow-hidden rounded-full bg-charcoal/10 dark:bg-white/20">
+                          <div className="bg-palm" style={{ width: `${successPct}%` }} />
+                          <div className="bg-red-500" style={{ width: `${failurePct}%` }} />
+                          <div className="bg-muted" style={{ width: `${otherPct}%` }} />
                         </div>
                       </div>
                     );
@@ -190,14 +190,14 @@ export default function AdminTaskRunsPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Task Volume</h2>
-              <p className="mt-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+            <div className="rounded-xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-5 shadow-sm">
+              <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">Top Task Volume</h2>
+              <p className="mt-1 text-xs font-medium text-muted dark:text-white/50">
                 Most active tasks in the current window.
               </p>
               <div className="mt-5 space-y-3">
                 {data.task_series.length === 0 ? (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">No task runs yet.</p>
+                  <p className="text-sm text-muted dark:text-white/50">No task runs yet.</p>
                 ) : (
                   data.task_series.map((point) => {
                     const totalPct = maxTaskTotal > 0 ? (point.total / maxTaskTotal) * 100 : 0;
@@ -205,15 +205,15 @@ export default function AdminTaskRunsPage() {
                     return (
                       <div key={point.task_name} className="space-y-1">
                         <div className="flex items-center justify-between gap-2 text-xs">
-                          <span className="truncate font-medium text-gray-800 dark:text-gray-200">
+                          <span className="truncate font-medium text-charcoal dark:text-white/80">
                             {point.task_name}
                           </span>
-                          <span className="text-gray-500 dark:text-gray-400">{point.total} total</span>
+                          <span className="text-muted dark:text-white/50">{point.total} total</span>
                         </div>
-                        <div className="h-2 rounded-full bg-blue-100 dark:bg-blue-950/40">
-                          <div className="h-2 rounded-full bg-blue-500" style={{ width: `${totalPct}%` }} />
+                        <div className="h-2 rounded-full bg-gulf/20 dark:bg-gulf/30">
+                          <div className="h-2 rounded-full bg-gulf" style={{ width: `${totalPct}%` }} />
                         </div>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        <p className="text-[11px] text-muted dark:text-white/50">
                           {(100 - failPct).toFixed(0)}% success · Last {formatDateTime(point.last_run_at)}
                         </p>
                       </div>
@@ -224,15 +224,15 @@ export default function AdminTaskRunsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Runs</h2>
-            <p className="mt-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+          <div className="rounded-xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-5 shadow-sm">
+            <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white">Recent Runs</h2>
+            <p className="mt-1 text-xs font-medium text-muted dark:text-white/50">
               Latest executions with timing and error details.
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <tr className="border-b border-charcoal/10 dark:border-white/20 text-xs uppercase tracking-wide text-muted dark:text-white/50">
                     <th className="px-2 py-2 font-semibold">Task</th>
                     <th className="px-2 py-2 font-semibold">Status</th>
                     <th className="px-2 py-2 font-semibold">Started</th>
@@ -245,20 +245,20 @@ export default function AdminTaskRunsPage() {
                   {data.recent_runs.map((run) => (
                     <tr
                       key={run.task_id}
-                      className="border-b border-gray-100 dark:border-gray-800 align-top text-gray-800 dark:text-gray-200"
+                      className="border-b border-charcoal/5 dark:border-white/10 align-top text-charcoal dark:text-white/90"
                     >
                       <td className="px-2 py-2">
                         <p className="max-w-[280px] truncate font-medium">{run.task_name}</p>
-                        <p className="max-w-[280px] truncate text-xs text-gray-500 dark:text-gray-400">{run.task_id}</p>
+                        <p className="max-w-[280px] truncate text-xs text-muted dark:text-white/50">{run.task_id}</p>
                       </td>
                       <td className="px-2 py-2">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
                             run.status === "success"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                              ? "bg-palm/15 text-palm dark:bg-palm/25 dark:text-palm/90"
                               : run.status === "failure"
-                                ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
-                                : "bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-300"
+                                ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                : "bg-charcoal/10 text-muted dark:bg-white/10 dark:text-white/70"
                           }`}
                         >
                           {run.status}
@@ -267,7 +267,7 @@ export default function AdminTaskRunsPage() {
                       <td className="px-2 py-2 text-xs">{formatDateTime(run.started_at)}</td>
                       <td className="px-2 py-2 text-xs">{formatDuration(run.runtime_ms)}</td>
                       <td className="px-2 py-2 text-xs">{run.worker_hostname ?? "-"}</td>
-                      <td className="px-2 py-2 text-xs text-rose-700 dark:text-rose-300">
+                      <td className="px-2 py-2 text-xs text-red-700 dark:text-red-300">
                         <p className="max-w-[360px] whitespace-pre-wrap break-words">
                           {run.error ? run.error : "-"}
                         </p>

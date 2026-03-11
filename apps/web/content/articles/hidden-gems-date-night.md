@@ -2,6 +2,7 @@
 title: "10 Hidden Gems for Date Night in Sarasota"
 excerpt: "From rooftop cocktails to moonlit beach walks, discover romantic spots locals love."
 category: "Guide"
+coverImage: "/uploads/bayfront_5.webp"
 readTime: "5 min"
 date: "2026-01-28T18:00:00Z"
 metaTitle: "10 Hidden Gems for Date Night in Sarasota, Florida"

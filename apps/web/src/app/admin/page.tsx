@@ -192,46 +192,48 @@ export default function AdminPage() {
   if (authChecking || !user) {
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Loading...</div>
+        <div className="text-sm text-muted dark:text-white/50 font-medium">Loading...</div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Admin Panel</h1>
+      <h1 className="text-3xl font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-8">
+        Admin Panel
+      </h1>
 
       <div className="space-y-6">
         {/* Ingest Source Feeds Section */}
-        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <div className="rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 shadow-sm">
+          <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-2">
             Ingest Source Feeds
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-sm text-muted dark:text-white/60 mb-4">
             Fetch and ingest events from iCal feeds for a selected source.
           </p>
 
           {loadingError ? (
-            <div className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
-              <p className="text-sm font-semibold text-red-900 dark:text-red-300">
+            <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                 Failed to load sources
               </p>
               <p className="mt-1 text-sm text-red-800 dark:text-red-400">{loadingError}</p>
               <button
                 onClick={loadSources}
-                className="mt-2 rounded-lg border-2 border-red-300 dark:border-red-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="mt-2 rounded-xl border border-red-300 dark:border-red-600 bg-white dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 Retry
               </button>
             </div>
           ) : !sources ? (
-            <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+            <div className="text-sm text-muted dark:text-white/50 font-medium">
               Loading sources...
             </div>
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                <label className="block text-xs font-semibold text-charcoal dark:text-white/80 mb-1">
                   Select Source
                 </label>
                 <select
@@ -242,7 +244,7 @@ export default function AdminPage() {
                     setIngestResult(null);
                     setIngestError(null);
                   }}
-                  className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                  className="w-full rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 text-charcoal dark:text-white px-3 py-2 text-sm focus:border-gulf focus:outline-none focus:ring-2 focus:ring-gulf/30 dark:focus:ring-purple-400/30"
                 >
                   <option value="">-- Select a source --</option>
                   {sources.map((source) => (
@@ -254,14 +256,14 @@ export default function AdminPage() {
               </div>
 
               {selectedSource && (
-                <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-3">
-                  <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <div className="rounded-xl border border-charcoal/10 dark:border-white/20 bg-sand/50 dark:bg-white/5 p-3">
+                  <div className="text-xs text-muted dark:text-white/50 space-y-1">
                     <p>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Type:</span>{" "}
+                      <span className="font-semibold text-charcoal dark:text-white/70">Type:</span>{" "}
                       {selectedSource.type}
                     </p>
                     <p>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Feeds:</span>{" "}
+                      <span className="font-semibold text-charcoal dark:text-white/70">Feeds:</span>{" "}
                       {selectedSource.feed_count}
                     </p>
                   </div>
@@ -271,7 +273,7 @@ export default function AdminPage() {
               <button
                 onClick={handleIngest}
                 disabled={!selectedSourceId || ingestStatus === "loading"}
-                className="rounded-lg bg-blue-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="rounded-xl bg-gulf px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gulf/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {ingestStatus === "loading" ? (
                   <span className="flex items-center gap-2">
@@ -304,24 +306,24 @@ export default function AdminPage() {
 
               {/* Success Result */}
               {ingestStatus === "success" && ingestResult && (
-                <div className="rounded-lg border-2 border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 p-4">
-                  <p className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
+                <div className="rounded-xl border border-palm/30 dark:border-palm/40 bg-palm/10 dark:bg-palm/20 p-4">
+                  <p className="text-sm font-semibold text-palm dark:text-palm/90 mb-2">
                     Ingest Complete
                   </p>
                   <div className="grid grid-cols-4 gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+                      <p className="text-2xl font-bold text-palm dark:text-palm/90">
                         {ingestResult.feeds_seen}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-500 font-medium">
+                      <p className="text-xs text-palm/80 dark:text-palm/70 font-medium">
                         Feeds Processed
                       </p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+                      <p className="text-2xl font-bold text-palm dark:text-palm/90">
                         {ingestResult.events_ingested}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-500 font-medium">
+                      <p className="text-xs text-palm/80 dark:text-palm/70 font-medium">
                         Events Ingested
                       </p>
                     </div>
@@ -329,13 +331,13 @@ export default function AdminPage() {
                       <p
                         className={`text-2xl font-bold ${
                           ingestResult.errors > 0
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-green-700 dark:text-green-400"
+                            ? "text-coral dark:text-coral/90"
+                            : "text-palm dark:text-palm/90"
                         }`}
                       >
                         {ingestResult.errors}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-500 font-medium">
+                      <p className="text-xs text-palm/80 dark:text-palm/70 font-medium">
                         Errors
                       </p>
                     </div>
@@ -343,13 +345,13 @@ export default function AdminPage() {
                       <p
                         className={`text-2xl font-bold ${
                           ingestResult.cf_challenges > 0
-                            ? "text-orange-600 dark:text-orange-400"
-                            : "text-green-700 dark:text-green-400"
+                            ? "text-coral dark:text-coral/90"
+                            : "text-palm dark:text-palm/90"
                         }`}
                       >
                         {ingestResult.cf_challenges}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-500 font-medium">
+                      <p className="text-xs text-palm/80 dark:text-palm/70 font-medium">
                         CF Blocked
                       </p>
                     </div>
@@ -359,8 +361,8 @@ export default function AdminPage() {
 
               {/* Error Result */}
               {ingestStatus === "error" && ingestError && (
-                <div className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
-                  <p className="text-sm font-semibold text-red-900 dark:text-red-300">
+                <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                     Ingest Failed
                   </p>
                   <p className="mt-1 text-sm text-red-800 dark:text-red-400">{ingestError}</p>
@@ -371,26 +373,26 @@ export default function AdminPage() {
         </div>
 
         {/* Clean up source feeds */}
-        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <div className="rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 shadow-sm">
+          <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-2">
             Clean up source feeds
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-sm text-muted dark:text-white/60 mb-4">
             Remove feeds that haven&apos;t been seen by scrapers in the given
-            number of days. Uses <code className="rounded bg-gray-200 dark:bg-gray-700 px-1">last_seen_at</code>{" "}
-            (or <code className="rounded bg-gray-200 dark:bg-gray-700 px-1">created_at</code> when
+            number of days. Uses <code className="rounded bg-charcoal/10 dark:bg-white/10 px-1">last_seen_at</code>{" "}
+            (or <code className="rounded bg-charcoal/10 dark:bg-white/10 px-1">created_at</code> when
             never seen). Preview shows how many would be removed without deleting.
           </p>
 
           {!sources ? (
-            <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+            <div className="text-sm text-muted dark:text-white/50 font-medium">
               Loading sources...
             </div>
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                  <label className="block text-xs font-semibold text-charcoal dark:text-white/80 mb-1">
                     Retention (days)
                   </label>
                   <select
@@ -401,7 +403,7 @@ export default function AdminPage() {
                       setCleanupResult(null);
                       setCleanupError(null);
                     }}
-                    className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                    className="w-full rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 text-charcoal dark:text-white px-3 py-2 text-sm focus:border-gulf focus:outline-none focus:ring-2 focus:ring-gulf/30 dark:focus:ring-purple-400/30"
                   >
                     <option value={30}>30</option>
                     <option value={60}>60</option>
@@ -409,7 +411,7 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                  <label className="block text-xs font-semibold text-charcoal dark:text-white/80 mb-1">
                     Source (optional)
                   </label>
                   <select
@@ -422,7 +424,7 @@ export default function AdminPage() {
                       setCleanupResult(null);
                       setCleanupError(null);
                     }}
-                    className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                    className="w-full rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 text-charcoal dark:text-white px-3 py-2 text-sm focus:border-gulf focus:outline-none focus:ring-2 focus:ring-gulf/30 dark:focus:ring-purple-400/30"
                   >
                     <option value="">All sources</option>
                     {sources.map((source) => (
@@ -438,7 +440,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => handleCleanup(true)}
                   disabled={cleanupStatus === "loading"}
-                  className="rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/80 dark:bg-white/5 px-4 py-2 text-sm font-medium text-charcoal dark:text-white hover:bg-sand/80 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {cleanupStatus === "loading" ? (
                     <span className="flex items-center gap-2">
@@ -471,20 +473,20 @@ export default function AdminPage() {
                 <button
                   onClick={() => handleCleanup(false)}
                   disabled={cleanupStatus === "loading"}
-                  className="rounded-lg bg-amber-600 dark:bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 dark:hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="rounded-xl bg-coral px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-coral/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Run cleanup
                 </button>
               </div>
 
               {cleanupStatus === "success" && cleanupResult && (
-                <div className="rounded-lg border-2 border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 p-4">
-                  <p className="text-sm font-semibold text-green-900 dark:text-green-300 mb-1">
+                <div className="rounded-xl border border-palm/30 dark:border-palm/40 bg-palm/10 dark:bg-palm/20 p-4">
+                  <p className="text-sm font-semibold text-palm dark:text-palm/90 mb-1">
                     {"would_delete" in cleanupResult
                       ? "Preview"
                       : "Cleanup complete"}
                   </p>
-                  <p className="text-sm text-green-800 dark:text-green-400">
+                  <p className="text-sm text-palm/90 dark:text-palm/70">
                     {"would_delete" in cleanupResult
                       ? `${cleanupResult.would_delete} feed(s) would be removed.`
                       : `${cleanupResult.deleted} feed(s) removed.`}
@@ -493,8 +495,8 @@ export default function AdminPage() {
               )}
 
               {cleanupStatus === "error" && cleanupError && (
-                <div className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
-                  <p className="text-sm font-semibold text-red-900 dark:text-red-300">
+                <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-4">
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                     Cleanup failed
                   </p>
                   <p className="mt-1 text-sm text-red-800 dark:text-red-400">
@@ -507,11 +509,11 @@ export default function AdminPage() {
         </div>
 
         {/* Hide / unhide event */}
-        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <div className="rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 shadow-sm">
+          <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-2">
             Hide / unhide event
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-sm text-muted dark:text-white/60 mb-4">
             Search by event title or by event ID. Hidden events are excluded from
             the public events list.
           </p>
@@ -520,7 +522,7 @@ export default function AdminPage() {
             <div>
               <label
                 htmlFor="event-search"
-                className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1"
+                className="block text-xs font-semibold text-charcoal dark:text-white/80 mb-1"
               >
                 Search by title or event ID
               </label>
@@ -530,12 +532,12 @@ export default function AdminPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="e.g. Jazz Night or 12345"
-                className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                className="w-full rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 text-charcoal dark:text-white px-3 py-2 text-sm focus:border-gulf focus:outline-none focus:ring-2 focus:ring-gulf/30 dark:focus:ring-purple-400/30"
               />
             </div>
 
             {searchError && (
-              <div className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-3">
+              <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-3">
                 <p className="text-sm text-red-800 dark:text-red-400">
                   {searchError}
                 </p>
@@ -543,7 +545,7 @@ export default function AdminPage() {
             )}
 
             {searchStatus === "loading" && searchInput.trim() && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+              <p className="text-sm text-muted dark:text-white/50 font-medium">
                 Searching…
               </p>
             )}
@@ -552,7 +554,7 @@ export default function AdminPage() {
               searchResults &&
               searchInput.trim() &&
               (searchResults.length === 0 ? (
-                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                <p className="text-sm text-muted dark:text-white/50 font-medium">
                   No events match &quot;{searchInput.trim()}&quot;
                 </p>
               ) : (
@@ -560,20 +562,20 @@ export default function AdminPage() {
                   {searchResults.map((ev) => (
                     <li
                       key={ev.id}
-                      className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-3"
+                      className="flex flex-wrap items-center gap-2 rounded-xl border border-charcoal/10 dark:border-white/20 bg-sand/50 dark:bg-white/5 p-3"
                     >
                       <div className="min-w-0 flex-1">
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <span className="text-sm font-medium text-charcoal dark:text-white">
                           {ev.title}
                         </span>
-                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="ml-2 text-xs text-muted dark:text-white/50">
                           #{ev.id} · {ev.source_name}
                           {ev.first_start_utc
                             ? ` · ${formatFirstStart(ev.first_start_utc)}`
                             : ""}
                         </span>
                         {ev.hidden && (
-                          <span className="ml-2 inline-flex items-center rounded bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
+                          <span className="ml-2 inline-flex items-center rounded-full bg-coral/15 px-2 py-0.5 text-xs font-medium text-coral dark:bg-coral/25 dark:text-coral/90">
                             Hidden
                           </span>
                         )}
@@ -581,10 +583,10 @@ export default function AdminPage() {
                       <button
                         onClick={() => handleHideUnhide(ev.id, !ev.hidden)}
                         disabled={hidingEventId === ev.id}
-                        className={`shrink-0 rounded-lg border-2 px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           ev.hidden
-                            ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
-                            : "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                            ? "border-palm/30 dark:border-palm/40 bg-palm/10 dark:bg-palm/20 text-palm dark:text-palm/90 hover:bg-palm/15 dark:hover:bg-palm/25"
+                            : "border-coral/30 dark:border-coral/40 bg-coral/10 dark:bg-coral/20 text-coral dark:text-coral/90 hover:bg-coral/15 dark:hover:bg-coral/25"
                         }`}
                       >
                         {hidingEventId === ev.id
@@ -601,23 +603,23 @@ export default function AdminPage() {
         </div>
 
         {/* Duplicate event preview */}
-        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <div className="rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 shadow-sm">
+          <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-2">
             Duplicate event preview
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-sm text-muted dark:text-white/60 mb-4">
             Groups duplicates by normalized title and start time for a given source.
           </p>
 
           {!sources ? (
-            <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+            <div className="text-sm text-muted dark:text-white/50 font-medium">
               Loading sources...
             </div>
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                  <label className="block text-xs font-semibold text-charcoal dark:text-white/80 mb-1">
                     Source
                   </label>
                   <select
@@ -628,7 +630,7 @@ export default function AdminPage() {
                       setDupeError(null);
                       setDupeStatus("idle");
                     }}
-                    className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                    className="w-full rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 text-charcoal dark:text-white px-3 py-2 text-sm focus:border-gulf focus:outline-none focus:ring-2 focus:ring-gulf/30 dark:focus:ring-purple-400/30"
                   >
                     <option value="">-- Select a source --</option>
                     {sources.map((source) => (
@@ -639,7 +641,7 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-900 dark:text-gray-200 mb-1">
+                  <label className="block text-xs font-semibold text-charcoal dark:text-white/80 mb-1">
                     Limit
                   </label>
                   <select
@@ -650,7 +652,7 @@ export default function AdminPage() {
                       setDupeError(null);
                       setDupeStatus("idle");
                     }}
-                    className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800"
+                    className="w-full rounded-xl border border-charcoal/15 dark:border-white/20 bg-white/90 dark:bg-white/5 text-charcoal dark:text-white px-3 py-2 text-sm focus:border-gulf focus:outline-none focus:ring-2 focus:ring-gulf/30 dark:focus:ring-purple-400/30"
                   >
                     <option value={50}>50</option>
                     <option value={100}>100</option>
@@ -663,13 +665,13 @@ export default function AdminPage() {
               <button
                 onClick={handleLoadDuplicates}
                 disabled={!dupeSourceId || dupeStatus === "loading"}
-                className="rounded-lg bg-blue-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="rounded-xl bg-gulf px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gulf/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {dupeStatus === "loading" ? "Loading..." : "Preview duplicates"}
               </button>
 
               {dupeError && (
-                <div className="rounded-lg border-2 border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-3">
+                <div className="rounded-xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 p-3">
                   <p className="text-sm text-red-800 dark:text-red-400">{dupeError}</p>
                 </div>
               )}
@@ -677,7 +679,7 @@ export default function AdminPage() {
               {dupeStatus === "idle" && dupeResults && (
                 <div className="space-y-2">
                   {dupeResults.length === 0 ? (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    <p className="text-sm text-muted dark:text-white/50 font-medium">
                       No duplicate groups found.
                     </p>
                   ) : (
@@ -685,20 +687,20 @@ export default function AdminPage() {
                       {dupeResults.map((group, idx) => (
                         <li
                           key={`${group.title_norm}-${group.start_utc}-${idx}`}
-                          className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-3"
+                          className="rounded-xl border border-charcoal/10 dark:border-white/20 bg-sand/50 dark:bg-white/5 p-3"
                         >
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            <span className="text-sm font-semibold text-charcoal dark:text-white">
                               {group.title_norm}
                             </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-muted dark:text-white/50">
                               {formatFirstStart(group.start_utc)}
                             </span>
-                            <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                            <span className="text-xs font-medium text-coral dark:text-coral/90">
                               {group.occurrences} occurrences
                             </span>
                           </div>
-                          <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="mt-2 text-xs text-muted dark:text-white/50">
                             Event IDs: {group.event_ids.join(", ")}
                           </div>
                         </li>
@@ -714,24 +716,24 @@ export default function AdminPage() {
         {/* Links Section */}
         <Link
           href="/admin/venues"
-          className="block rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all shadow-sm hover:shadow-md"
+          className="block rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 shadow-sm transition-all hover:border-palm/40 dark:hover:border-palm/50 hover:bg-palm/5 dark:hover:bg-palm/10 hover:shadow-md"
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-2">
             Venue Metadata
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+          <p className="text-sm text-muted dark:text-white/60">
             Edit venue descriptions, hero image paths, and related SEO metadata.
           </p>
         </Link>
 
         <Link
           href="/admin/unresolved"
-          className="block rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all shadow-sm hover:shadow-md"
+          className="block rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 shadow-sm transition-all hover:border-gulf/40 dark:hover:border-gulf/50 hover:bg-gulf/5 dark:hover:bg-gulf/10 hover:shadow-md"
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-2">
             Unresolved Locations
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+          <p className="text-sm text-muted dark:text-white/60">
             Review and resolve event locations that couldn&apos;t be automatically
             matched to venues.
           </p>
@@ -739,12 +741,12 @@ export default function AdminPage() {
 
         <Link
           href="/admin/tasks"
-          className="block rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 hover:border-cyan-300 dark:hover:border-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all shadow-sm hover:shadow-md"
+          className="block rounded-2xl border border-charcoal/10 dark:border-white/20 bg-white/80 dark:bg-white/5 p-6 shadow-sm transition-all hover:border-gulf/40 dark:hover:border-gulf/50 hover:bg-gulf/5 dark:hover:bg-gulf/10 hover:shadow-md"
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <h2 className="text-lg font-[var(--font-heading)] font-semibold text-charcoal dark:text-white mb-2">
             Task Runs Dashboard
           </h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+          <p className="text-sm text-muted dark:text-white/60">
             Track Celery run health, failure trends, and recent task outcomes.
           </p>
         </Link>

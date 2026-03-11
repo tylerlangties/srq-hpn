@@ -37,7 +37,7 @@ export function useAdminGuard(): AdminGuardState {
         const status = extractApiStatus(error);
         if (status === 401) {
           const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
-          router.replace(`/login${next}`);
+          router.replace(`/signin${next}`);
           return;
         }
 

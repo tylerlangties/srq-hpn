@@ -2,6 +2,7 @@
 title: "Family-Friendly Events This Weekend"
 excerpt: "Activities that'll keep the kids happy and give parents a break."
 category: "Family"
+coverImage: "/uploads/bayfront_4.webp"
 readTime: "5 min"
 date: "2026-01-31T14:00:00Z"
 metaTitle: "Family-Friendly Things to Do in Sarasota This Weekend"

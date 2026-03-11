@@ -2,6 +2,7 @@
 title: "The Best Free Things to Do in SRQ"
 excerpt: "Explore Sarasota without spending a dime - beaches, parks, and public art."
 category: "Budget"
+coverImage: "/uploads/selby_2.webp"
 readTime: "4 min"
 date: "2026-01-25T15:30:00Z"
 metaTitle: Free Things to Do in Sarasota, Florida | Local Guide
