@@ -299,15 +299,23 @@ def list_event_duplicates(
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
 ) -> list[DuplicateGroupOut]:
-    """
-    List duplicate event occurrences by normalized title + start time.
-    Useful for previewing dedupe candidates.
-    """
-    title_norm = func.regexp_replace(func.lower(Event.title), r"\s+", " ", "g").label(
-        "title_norm"
+    title_norm = func.trim(
+        func.regexp_replace(
+            func.regexp_replace(
+                func.lower(func.coalesce(Event.title, "")),
+                r"[^a-z0-9]+",
+                " ",
+                "g",
+            ),
+            r"\s+",
+            " ",
+            "g",
+        )
+    ).label("title_norm")
+    start_utc = func.date_trunc("minute", EventOccurrence.start_datetime_utc).label(
+        "start_utc"
     )
-    start_utc = EventOccurrence.start_datetime_utc.label("start_utc")
-    occurrences = func.count(EventOccurrence.id).label("occurrences")
+    occurrences = func.count(func.distinct(Event.id)).label("occurrences")
     event_ids = func.array_agg(func.distinct(Event.id)).label("event_ids")
 
     stmt = (
@@ -315,7 +323,7 @@ def list_event_duplicates(
         .join(EventOccurrence, EventOccurrence.event_id == Event.id)
         .where(Event.source_id == source_id)
         .group_by(title_norm, start_utc)
-        .having(func.count(EventOccurrence.id) > 1)
+        .having(func.count(func.distinct(Event.id)) > 1)
         .order_by(occurrences.desc(), start_utc.desc())
         .limit(limit)
     )
